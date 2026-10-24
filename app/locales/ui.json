@@ -8662,5 +8662,49 @@
   "Timing repair cannot satisfy the synchronization limits; original document preserved": {
     "en": "Timing repair cannot satisfy the synchronization limits; original document preserved",
     "fr": "Les contraintes de synchronisation ne peuvent pas être satisfaites ; document d’origine conservé"
+  },
+  "PyTorch is not installed. Open Installation to download it before generating subtitles.": {
+    "en": "PyTorch is not installed. Open Installation to download it before generating subtitles.",
+    "fr": "PyTorch n’est pas installé. Ouvrez Installation pour le télécharger avant de générer les sous-titres."
+  },
+  "PyTorch is downloaded separately and installed privately for this Tool. CPU inference only.": {
+    "en": "PyTorch is downloaded separately and installed privately for this Tool. CPU inference only.",
+    "fr": "PyTorch se télécharge séparément et s’installe dans le runtime privé du Tool. Calcul CPU uniquement."
+  },
+  "PyTorch license and source": {
+    "en": "PyTorch license and source",
+    "fr": "Licence et sources de PyTorch"
+  },
+  "I reviewed the PyTorch license": {
+    "en": "I reviewed the PyTorch license",
+    "fr": "J’ai consulté la licence de PyTorch"
+  },
+  "Download / repair PyTorch": {
+    "en": "Download / repair PyTorch",
+    "fr": "Télécharger / réparer PyTorch"
+  },
+  "Check PyTorch installation": {
+    "en": "Check PyTorch installation",
+    "fr": "Vérifier l’installation de PyTorch"
+  },
+  "Downloading and verifying PyTorch": {
+    "en": "Downloading and verifying PyTorch",
+    "fr": "Téléchargement et vérification de PyTorch"
+  },
+  "PyTorch ready": {
+    "en": "PyTorch ready",
+    "fr": "PyTorch prêt"
+  },
+  "Install PyTorch from Installation > Download / repair PyTorch before transcription": {
+    "en": "Install PyTorch from Installation > Download / repair PyTorch before transcription",
+    "fr": "Installez PyTorch dans Installation > Télécharger / réparer PyTorch avant la transcription"
+  },
+  "Review the PyTorch BSD-3-Clause license before installing": {
+    "en": "Review the PyTorch BSD-3-Clause license before installing",
+    "fr": "Consultez la licence BSD-3-Clause de PyTorch avant l’installation"
+  },
+  "Guided PyTorch installation currently supports Windows only": {
+    "en": "Guided PyTorch installation currently supports Windows only",
+    "fr": "L’installation guidée de PyTorch est actuellement disponible sur Windows uniquement"
   }
 }

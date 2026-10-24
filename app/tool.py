@@ -11,11 +11,13 @@ from cytools_core import Runtime, load_manifest, CyToolError
 from cytools_core.transports.cli import run_cli
 from cytools_core.workers import ProcessWorker
 import subtitles
+import runtime_components
 
 APP=Path(__file__).resolve().parent
 ROOT=APP.parent
 MODELS=ROOT/"data/settings/models.json"
 MODEL_IDS=("phonon-2","phonon-2.5","phonon-2.5-en")
+runtime_components.activate(ROOT)
 
 
 def model_records():
@@ -130,6 +132,8 @@ def create_runtime(data_dir, **options):
         model_path=p["local_model"] or model_records().get(p["model"],{}).get("path","")
         if not model_path or not Path(model_path).is_dir():
             raise CyToolError("ModelNotInstalled","Use Installation > Download / repair, or install_model, before transcription",recoverable=True)
+        if not runtime_components.status(ROOT)["ready"]:
+            raise CyToolError("MissingDependency","Install PyTorch from Installation > Download / repair PyTorch before transcription",recoverable=True)
         try:verify_model(model_path,ctx.cancellation)
         except (OSError,ValueError) as exc:raise CyToolError("InvalidModel",str(exc),recoverable=True) from exc
         meta=worker(ctx,{"task":"probe","source":str(path)})
@@ -253,6 +257,31 @@ def create_runtime(data_dir, **options):
         ctx.progress(100,currentStep="Local model registered")
         return {"id":identifier,**record}
 
+    def runtime_status(ctx,p):
+        result=runtime_components.status(ROOT)
+        ctx.progress(100,currentStep="Checked")
+        return result
+
+    def install_runtime(ctx,p):
+        if not p["license_accepted"]:
+            raise CyToolError("LicenseAcceptanceRequired","Review the PyTorch BSD-3-Clause license before installing",recoverable=True)
+        if sys.platform!="win32":raise CyToolError("UnsupportedPlatform","Guided PyTorch installation currently supports Windows only",recoverable=True)
+        if runtime_components.status(ROOT)["ready"] and not p["repair"]:return runtime_components.status(ROOT)
+        from filelock import FileLock,Timeout
+        base=ROOT/"runtime/components/pytorch";base.mkdir(parents=True,exist_ok=True)
+        lock=FileLock(str(base/"install.lock"))
+        while True:
+            ctx.cancellation.check()
+            try:lock.acquire(timeout=0);break
+            except Timeout:ctx.cancellation.sleep(.1)
+        try:
+            ctx.progress(5,currentStep="Downloading and verifying PyTorch")
+            candidate=base/(runtime_components.PACKAGES["torch"]+"-"+uuid.uuid4().hex)
+            value=worker(ctx,{"task":"install_runtime","root":str(ROOT),"destination":str(candidate)},1800)
+            ctx.progress(100,currentStep="PyTorch ready")
+            return value
+        finally:lock.release()
+
     def estimate(p,backend,model):
         # Conservative 4 GiB CPU model envelope, plus input copies and up to 24h PCM.
         size=0
@@ -270,7 +299,7 @@ def create_runtime(data_dir, **options):
         except OSError:size=0
         return {"ramBytes":512*1024**2,"diskBytes":size*2+128*1024**2,"cpuThreads":1}
 
-    for name,handler in (("transcribe",transcribe),("inspect_media",inspect_media),("read_subtitles",read_subtitles),("edit_subtitles",edit_subtitles),("reflow_subtitles",reflow_subtitles),("repair_subtitles",repair_subtitles),("model_status",status),("install_model",install),("register_local_model",register_local)):
+    for name,handler in (("transcribe",transcribe),("inspect_media",inspect_media),("read_subtitles",read_subtitles),("edit_subtitles",edit_subtitles),("reflow_subtitles",reflow_subtitles),("repair_subtitles",repair_subtitles),("model_status",status),("install_model",install),("register_local_model",register_local),("runtime_status",runtime_status),("install_runtime",install_runtime)):
         runtime.register(name,handler,**({"estimate":estimate} if name=="transcribe" else {"estimate":estimate_input} if name in ("inspect_media","read_subtitles","edit_subtitles","reflow_subtitles","repair_subtitles") else {}))
     return runtime
 

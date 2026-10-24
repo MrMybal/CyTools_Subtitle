@@ -33,3 +33,12 @@ The complete directory was moved to a different path containing spaces and an ac
 A real MCP stdio session using the relocated interpreter inspected a 640x360 video and transcribed its audio into 27 words and 5 cues in approximately 11.2 seconds on this test machine. The test edited a cue, exported the result, finished the temporary task and verified that only the exported result remained. Preview opened physical audio output, decoded video pixels, played and sought successfully. Installed local models were referenced for this test; weights and test media are not included in the release.
 
 The 21 Tool tests passed after switching the worker to module-based Phonon invocation. These checks cover this Windows machine; they do not establish portability across every Windows version, codec or audio device. The repository is private at this delivery: releases can be downloaded through an authenticated browser, while the in-app updater currently expects public release URLs. Update activation/rollback remain validated with local fixtures rather than a private authenticated download.
+
+
+## Optional PyTorch download — 0.3.0
+
+The Windows base runtime was rebuilt without Torch, SymPy, NetworkX and mpmath. A relocated clean installation returned Missing and could not resolve the torch module. The actual Windows .exe rendered the Installation tab in English and French without Torch, showing the license review and download controls.
+
+A real authenticated MCP session checked runtime_status, verified refusal without explicit license review, started install_runtime and cancelled after observing the pip child process. The job reached Cancelled only after that child stopped; no active component pointer was created. A subsequent real PyPI installation downloaded PyTorch 2.14.1 and its fixed private math dependencies, passed a separate CPU import check and activated the component in about 62.7 seconds on this machine. Existing model files were referenced in place. Video transcription then produced 27 words and 5 cues, followed by export and temporary-task cleanup.
+
+The automated suite now has 24 passing tests. New coverage checks missing runtime status, path confinement, authenticated network and license requirements, and preservation of the previous active installation when candidate verification fails. Downloaded component directories and caches are excluded from base packaging even after successful local tests. Guided component installation is Windows/CPython 3.11 CPU only; Linux/macOS remain unvalidated.

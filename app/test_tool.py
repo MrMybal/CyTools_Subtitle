@@ -207,3 +207,47 @@ def test_second_audio_track_is_actually_selected(configured,tmp_path):
         with wave.open(first["outputs"]["excerpt"]) as w:quiet=array.array("h",w.readframes(w.getnframes()))
         with wave.open(second["outputs"]["excerpt"]) as w:tone=array.array("h",w.readframes(w.getnframes()))
         assert max(abs(x) for x in quiet)==0 and max(abs(x) for x in tone)>1000
+
+
+
+def test_optional_runtime_status_and_confined_activation(tmp_path,monkeypatch):
+    import runtime_components as components
+    def missing(name):raise components.importlib.metadata.PackageNotFoundError(name)
+    monkeypatch.setattr(components.importlib.metadata,"distribution",missing)
+    result=components.status(tmp_path)
+    assert not result["ready"] and result["state"]=="Missing"
+    outside=tmp_path/"outside";outside.mkdir();(outside/"torch").mkdir();(outside/"torch/__init__.py").write_text("")
+    base=tmp_path/"runtime/components/pytorch";base.mkdir(parents=True)
+    (base/"active.json").write_text(json.dumps({"schemaVersion":1,"directory":"../../../outside"}))
+    assert components.active_directory(tmp_path) is None
+    assert str(outside) not in sys.path
+
+
+def test_optional_runtime_install_requires_authenticated_network_and_license(configured):
+    with tool.create_runtime(configured/"jobs") as r:
+        ordinary=actor(r);session=r.create_session(ordinary)["sessionId"]
+        with pytest.raises(CyToolError):r.submit(ordinary,session,"install_runtime",{"license_accepted":True})
+        installer=r.authenticate(r.create_client("Installer",permissions=["network"])["token"])
+        session=r.create_session(installer)["sessionId"]
+        result=run(r,installer,session,"install_runtime",{})
+        assert result["state"]=="Failed" and result["error"]["code"]=="LicenseAcceptanceRequired"
+        assert not (configured/"runtime/components/pytorch/active.json").exists()
+
+
+def test_failed_optional_runtime_probe_preserves_previous_installation(tmp_path,monkeypatch):
+    import runtime_components as components
+    import subprocess,shutil
+    base=tmp_path/"runtime/components/pytorch";previous=base/"previous";previous.mkdir(parents=True)
+    (previous/"torch").mkdir();(previous/"torch/__init__.py").write_text("")
+    marker=base/"active.json";marker.write_text(json.dumps({"schemaVersion":1,"directory":"previous"}))
+    original=marker.read_bytes()
+    wheels=tmp_path/"app/packages";wheels.mkdir(parents=True)
+    shutil.copyfile(Path(tool.APP)/"packages"/components.PIP_WHEEL,wheels/components.PIP_WHEEL)
+    calls=[]
+    def installer_then_failed_probe(args,**kwargs):
+        calls.append(args)
+        if len(calls)==2:raise subprocess.CalledProcessError(1,args)
+        return subprocess.CompletedProcess(args,0)
+    monkeypatch.setattr(components.subprocess,"run",installer_then_failed_probe)
+    with pytest.raises(subprocess.CalledProcessError):components.install(tmp_path,base/"candidate")
+    assert marker.read_bytes()==original and components.active_directory(tmp_path)==previous

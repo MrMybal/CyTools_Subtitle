@@ -10,6 +10,7 @@ from tool import APP, ROOT, create_runtime, model_records
 from preview import Player
 import subtitles
 import updates
+import runtime_components
 
 
 def defaults():
@@ -27,8 +28,10 @@ def main():
     form=defaults();job=None;subtitle_job=None;message="";frames=0;dialog=None;dialog_kind="";loaded_job=""
     document=None;document_path="";selected=0;cue_text="";cue_start=0.;cue_end=1.;cue_kind=0
     offset=0.;export_folder="";accepted=False;model_status="";sound_text="";sound_duration=2.
+    runtime_accepted=False;runtime_info=runtime_components.status(ROOT)
     pool=ThreadPoolExecutor(max_workers=2);future=None;future_kind="";player=Player()
     github=updates.read_settings().get("repository","");automatic=updates.read_settings().get("automaticCheck",False)
+    test_installation='--ui-test-installation' in sys.argv
     test_repair='--ui-test-repair' in sys.argv
     test_preview='--ui-test-preview' in sys.argv
     test_started=time.monotonic();test_played=False
@@ -64,7 +67,7 @@ def main():
             keys=("max_cps","min_duration","max_advance","max_delay","max_extension","min_gap","merge_fragments","max_chars","max_lines","max_duration","pause")
             submit("repair_subtitles",{"document":document_path,**{k:form[k] for k in keys}})
         def gui():
-            nonlocal job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played
+            nonlocal job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
             frames+=1
             if test_repair and frames==3:repair_current()
             if test_repair and frames>30 and job and job["state"] in ("Completed","Failed","Cancelled"):runner.app_shall_exit=True
@@ -95,6 +98,10 @@ def main():
                         document_path=output["document"];document=subtitles.validate(json.loads(Path(document_path).read_text("utf-8")))
                         if document["cues"]:select_cue(0)
                     if job["operationId"]=="install_model":model_status=json.dumps(output,ensure_ascii=False)
+                    if job["operationId"] in ("runtime_status","install_runtime"):
+                        runtime_info=output;runtime_components.activate(ROOT)
+                        import ui_common
+                        ui_common._licenses=None
             active=bool(job and job["state"] not in ("Completed","Failed","Cancelled"))
             imgui.text("CyTools_Subtitle");imgui.same_line();imgui.text(tr("Local subtitles · Phonon · SRT / VTT"))
             if imgui.begin_tab_bar("subtitle-tabs"):
@@ -135,7 +142,10 @@ def main():
                         _,form["local_model"]=imgui.input_text("Optional local Phonon model folder",form["local_model"])
                         imgui.text_wrapped(tr("Local models are referenced in place. Only compatible Phonon-2 family directories; LoRA is not supported by this engine."))
                     imgui.begin_disabled(active)
+                    if not runtime_info["ready"]:imgui.text_wrapped(tr("PyTorch is not installed. Open Installation to download it before generating subtitles."))
+                    imgui.begin_disabled(not runtime_info["ready"])
                     if imgui.button("Generate subtitles"):submit("transcribe",dict(form))
+                    imgui.end_disabled()
                     imgui.same_line()
                     if imgui.button("Inspect media"):submit("inspect_media",{"media":form["media"],"audio_stream":form["audio_stream"],"excerpt":True})
                     imgui.end_disabled()
@@ -215,8 +225,21 @@ def main():
                             start=player.current_time();submit("edit_subtitles",{"document":document_path,"edits":[{"id":"sound-"+uuid.uuid4().hex[:12],"start":start,"end":start+sound_duration,"text":sound_text,"kind":"sound"}]})
                         imgui.end_disabled()
                     imgui.end_tab_item()
-                opened,_=imgui.begin_tab_item("Installation")
+                opened,_=imgui.begin_tab_item("Installation",flags=imgui.TabItemFlags_.set_selected if test_installation else 0)
                 if opened:
+                    imgui.text("PyTorch CPU "+runtime_info["expectedVersion"]);imgui.same_line();imgui.text(tr(runtime_info["state"]))
+                    imgui.text_wrapped(tr("PyTorch is downloaded separately and installed privately for this Tool. CPU inference only."))
+                    if imgui.button("PyTorch license and source"):
+                        import webbrowser
+                        webbrowser.open(runtime_components.LICENSE_URL)
+                    _,runtime_accepted=imgui.checkbox("I reviewed the PyTorch license",runtime_accepted)
+                    imgui.begin_disabled(active or not runtime_accepted)
+                    if imgui.button("Download / repair PyTorch"):submit("install_runtime",{"license_accepted":runtime_accepted,"repair":True})
+                    imgui.end_disabled()
+                    imgui.begin_disabled(active)
+                    if imgui.button("Check PyTorch installation"):submit("runtime_status",{})
+                    imgui.end_disabled()
+                    imgui.separator()
                     imgui.text_wrapped(tr("Public model weights: CC-BY-4.0. Download size about 160 MB per model; expanded installation is larger. Downloads stay private to this Tool."))
                     if imgui.button("Official model page"):
                         import webbrowser
@@ -264,7 +287,7 @@ def main():
                 if job["state"]=="Completed" and job["operationId"]=="inspect_media":
                     imgui.input_text_multiline("Inspection result",json.dumps(job["outputs"],indent=2,ensure_ascii=False),(0,120))
             if message:imgui.text_wrapped(message)
-            if '--smoke-test' in sys.argv and frames>20:runner.app_shall_exit=True
+            if ('--smoke-test' in sys.argv or test_installation) and frames>20:runner.app_shall_exit=True
         configure_generation(runtime,lambda:{"operationId":"transcribe","parameters":dict(form)},lambda recipe:restore_form(form,recipe))
         runner.callbacks.show_gui=gui
         try:
@@ -273,6 +296,11 @@ def main():
             if test_preview:
                 from standalone_log import save_screenshot
                 save_screenshot(ROOT/'data/reports/preview.png',hello_imgui.final_app_window_screenshot())
+            if test_installation:
+                from standalone_log import save_screenshot
+                from ui_common import preferences
+                save_screenshot(ROOT/('data/reports/installation-'+preferences.values['language']+'.png'),hello_imgui.final_app_window_screenshot())
+                (ROOT/'data/reports/installation-ui.json').write_text(json.dumps(runtime_info),'utf-8')
             if test_repair:
                 assert job and job["state"]=="Completed",job
                 assert not document["warnings"],document["warnings"]

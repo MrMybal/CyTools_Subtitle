@@ -1,4 +1,4 @@
-# Native capability coverage — CyTools_Subtitle 0.2.0
+# Native capability coverage — CyTools_Subtitle 0.3.0
 
 Inventory source: fermion-research 0.2.14 installed CLI help, fermion/_speech engine implementation, https://github.com/fermionresearch/phonon/blob/main/docs/cli.md and https://www.fermionresearch.com/docs/speech/. Scope: local file transcription and subtitle authoring. Status below distinguishes actual execution from available code.
 
@@ -33,3 +33,12 @@ All business fields and invocation envelopes are exposed through Advanced operat
 
 
 0.2.0 adds Tool-owned timing repair, not a new Phonon model capability: repair_subtitles, automatic transcription/reflow postprocessing, bounded early/late shifts, reading speed, short-fragment merging and persistent anchors. The editor and MCP use the same isolated worker. Native words, sound captions and manual speech edits are retained; warnings that cannot be resolved within the bounds remain visible. Tested on a complete 58m56s French recording through MCP, with exact word/text preservation and task export/cleanup checks.
+
+## Optional inference runtime in 0.3.0
+
+| Capability | Operation | Standalone | Contract |
+|---|---|---|---|
+| PyTorch availability without importing the engine | runtime_status | Installation state / Check PyTorch installation | Installed/Missing, expected and detected package versions |
+| Private CPU dependency installation | install_runtime | License review / Download or repair PyTorch | Authenticated network permission; license_accepted, repair; fixed package pins, verified candidate activation |
+
+PyTorch and its specific math dependencies are absent from the Windows base archive. Model installation and optional runtime installation remain separate operations. Linux/macOS installation is not validated. See RuntimeInstallation.md and Validation.md.

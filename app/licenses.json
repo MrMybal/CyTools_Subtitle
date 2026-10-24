@@ -52,5 +52,12 @@
     "name": "sounddevice / PortAudio",
     "license": "MIT / PortAudio license",
     "url": "https://github.com/spatialaudio/python-sounddevice"
+  },
+  {
+    "kind": "Dependency",
+    "name": "PyTorch (optional CPU runtime)",
+    "license": "BSD-3-Clause",
+    "url": "https://github.com/pytorch/pytorch/blob/v2.14.1/LICENSE",
+    "notes": "Downloaded separately from Installation; not included in the base Windows package."
   }
 ]

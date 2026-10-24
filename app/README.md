@@ -1,10 +1,10 @@
-# CyTools_Subtitle 0.2.2
+# CyTools_Subtitle 0.3.0
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
 ## Desktop
 
-The Windows portable release includes Python and dependencies: extract the complete archive, then launch ../CyTools_Subtitle.exe. Source checkouts require install.ps1 first. English is the default; French is selectable in Options. Select an audio/video source and Generate subtitles. The player streams decoding off the UI thread, overlays active captions and supports pause/seek. Source and preview pixel dimensions are displayed. The editor changes individual cue text/start/end, shifts the track, adds sound captions and exports SRT/VTT/JSON. Reflow explicitly rebuilds speech from original word timings, replacing manual speech edits while preserving sound captions.
+The Windows portable release includes Python and media/UI dependencies; PyTorch is downloaded separately from Installation: extract the complete archive, then launch ../CyTools_Subtitle.exe. Source checkouts require install.ps1 first. English is the default; French is selectable in Options. Select an audio/video source and Generate subtitles. The player streams decoding off the UI thread, overlays active captions and supports pause/seek. Source and preview pixel dimensions are displayed. The editor changes individual cue text/start/end, shifts the track, adds sound captions and exports SRT/VTT/JSON. Reflow explicitly rebuilds speech from original word timings, replacing manual speech edits while preserving sound captions.
 
 Phonon-2 and Phonon-2.5 English: English only. Phonon-2.5: multilingual, including French. These models do not translate, diarize speakers or classify background sounds. CPU is the only integrated execution device; no unused GPU/LoRA controls. Voice filtering is highpass/lowpass plus FFT denoise, not neural vocal separation.
 
@@ -17,6 +17,7 @@ The model receives sequential bounded WAV windows, with overlap and word-midpoin
 - read_subtitles: paginated original words and current cues in a time range.
 - edit_subtitles: stable-ID text/timing patches, delete/add cues, sound descriptions and global offset. Writes a new bundle.
 - reflow_subtitles: rebuild speech cues from the original word timing evidence.
+- runtime_status / install_runtime: inspect or download/repair the optional pinned CPU PyTorch component, with explicit license review and authenticated network permission.
 - model_status / install_model / register_local_model: verify, download/repair and reference compatible local models.
 - installation_storage_status: SDK cache and Toolkit diagnostics.
 
@@ -43,7 +44,7 @@ Install operations require the authenticated network permission and explicit pub
 
 ## Installation / updates
 
-The local runtime uses the real wheel in app/packages. install.ps1 creates a private venv at its final path using Python 3.11, then installs pinned top-level requirements. install.sh is provided for Linux but unvalidated. Local venvs are not portable; model weights and environments are excluded from source releases.
+The local runtime uses the real wheel in app/packages. install.ps1 creates a private venv at its final path using Python 3.11, then installs the pinned Windows base requirements without PyTorch. Install PyTorch through Installation before inference. The full requirements.txt remains available for development environments. install.sh is provided for Linux but unvalidated. Local venvs are not portable; model weights and environments are excluded from source releases.
 
 Model catalog pins are copied from fermion-research==0.2.14 into model-catalog.json. The upstream downloader verifies archive hashes and supports retries; the Tool additionally hashes the local container against packed_manifest.json. Repair preserves damaged managed weights in a neighbouring .invalid-* directory. References require config.json, packed_manifest.json and matching model.fermion for the Phonon-2 family. No LoRA. Configurations contain only references, never weights/secrets. Changing shared cache settings never moves models, Python, PyTorch libraries or the system driver.
 

@@ -1,6 +1,6 @@
 # CyTools_Subtitle
 
-Archive Windows portable : extrayez tout le ZIP dans un dossier accessible en écriture, puis lancez **CyTools_Subtitle.exe**. Python et les dépendances sont inclus. Téléchargez les modèles dans l’onglet Installation après consultation de leur licence. Pour une installation depuis les sources, exécutez d’abord app/install.ps1.
+Archive Windows portable : extrayez tout le ZIP dans un dossier accessible en écriture, puis lancez **CyTools_Subtitle.exe**. Python et les bibliothèques du lecteur et de l’interface sont inclus. Dans Installation, consultez la licence de PyTorch et cliquez **Download / repair PyTorch**, puis téléchargez les modèles dans l’onglet Installation après consultation de leur licence. Pour une installation depuis les sources, exécutez d’abord app/install.ps1.
 
 1. Ouvrez votre audio ou vidéo dans **Media & generation**.
 2. Choisissez **phonon-2** pour l’anglais ou **phonon-2.5** pour le français et le multilingue.
@@ -26,3 +26,5 @@ Version 0.2.0 : la correction des durées et chevauchements est automatique pour
 Version 0.2.1 : l’application est sous GNU Affero General Public License version 3 uniquement (AGPL-3.0-only), copyright (c) 2026 Cyberalien. Voir LICENSE. Le SDK CyToolsCore reste MIT ; les bibliothèques et modèles conservent leurs licences respectives.
 
 Version 0.2.2 : paquet Windows portable avec runtime privé inclus. Les modèles se téléchargent séparément. Les releases privées se téléchargent dans le navigateur avec un compte autorisé ; l’updater intégré nécessite actuellement une release publique.
+
+Version 0.3.0 : PyTorch, SymPy, NetworkX et mpmath ne sont plus inclus dans le ZIP de base. Installation propose leur téléchargement privé, leur vérification et leur réparation. Le lecteur et l’éditeur fonctionnent sans PyTorch. Pour migrer depuis 0.2.x, extrayez le nouveau paquet dans un dossier séparé et référencez les modèles existants sans les déplacer.

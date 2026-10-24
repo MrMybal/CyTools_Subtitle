@@ -3,7 +3,7 @@
   "protocolVersion": "1.0",
   "id": "cy.tools.subtitle",
   "name": "CyTools_Subtitle",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Local Phonon subtitles with word timing, bounded audio processing, media preview and MCP editing.",
   "vendor": "Cyberalien",
   "author": "Cyberalien",
@@ -1548,10 +1548,276 @@
         }
       ],
       "outputs": []
+    },
+    {
+      "id": "runtime_status",
+      "name": "Check PyTorch installation",
+      "description": "Inspect private PyTorch package availability without importing Torch or downloading files.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "component": {
+            "const": "pytorch"
+          },
+          "state": {
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "expectedVersion": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "expectedVersion": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "installed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "name",
+                "expectedVersion",
+                "version",
+                "installed"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "licenseUrl": {
+            "type": "string"
+          },
+          "probeVerified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "component",
+          "state",
+          "ready",
+          "expectedVersion",
+          "version",
+          "packages",
+          "path",
+          "source",
+          "license",
+          "licenseUrl",
+          "probeVerified"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 16777216,
+        "diskBytes": 0,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "id": "install_runtime",
+      "name": "Download / repair PyTorch",
+      "description": "Download fixed CPU PyTorch and its optional dependencies into a new private directory; verify before atomic activation. No models, drivers or CUDA libraries are moved.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "license_accepted": {
+            "type": "boolean",
+            "default": false
+          },
+          "repair": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "component": {
+            "const": "pytorch"
+          },
+          "state": {
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "expectedVersion": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "expectedVersion": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "installed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "name",
+                "expectedVersion",
+                "version",
+                "installed"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "licenseUrl": {
+            "type": "string"
+          },
+          "probeVerified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "component",
+          "state",
+          "ready",
+          "expectedVersion",
+          "version",
+          "packages",
+          "path",
+          "source",
+          "license",
+          "licenseUrl",
+          "probeVerified"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 2147483648,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [
+        "network"
+      ],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "phonon"
+      ]
     }
   ],
   "standaloneExecutable": "CyTools_Subtitle.exe",
-  "distributionStatus": "Windows x64 CPU locally validated; portable CPython 3.11.9 runtime included in the Windows release; source setup requires Python 3.11; Linux/macOS unvalidated.",
+  "distributionStatus": "Windows x64 CPU; portable base runtime; PyTorch and model weights downloaded separately from Installation. Linux/macOS unvalidated.",
   "license": "AGPL-3.0-only",
   "repository": "https://github.com/MrMybal/CyTools_Subtitle",
   "homepage": "https://github.com/MrMybal/CyTools_Subtitle"

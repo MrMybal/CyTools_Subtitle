@@ -55,10 +55,10 @@ def main():
             encoding="utf-8")
         subprocess.run([
             sys.executable, "-m", "pip", "install", "--keyring-provider", "disabled",
-            "--disable-pip-version-check", "--only-binary=:all:", "--no-compile",
+            "--disable-pip-version-check", "--only-binary=:all:", "--no-compile", "--no-deps",
             "--target", str(site), "--find-links", str(ROOT / "app/packages"),
             "--constraint", str(ROOT / "app/windows-constraints.txt"),
-            "--requirement", str(ROOT / "app/requirements.txt"),
+            "--requirement", str(ROOT / "app/requirements-base-windows.txt"),
         ], check=True)
         # pip entry-point launchers encode the build interpreter's absolute path.
         # The application invokes modules through its own interpreter instead.
@@ -104,16 +104,16 @@ def main():
         (stage / "PORTABLE.txt").write_text(
             "CyTools_Subtitle " + version + " - Windows x64\n\n"
             "Extract the entire archive to a writable folder, then open CyTools_Subtitle.exe.\n"
-            "Python and application dependencies are included; no system Python is required.\n"
-            "In Installation, review the model license and download Phonon-2 (English)\n"
-            "or Phonon-2.5 (multilingual). Model downloads require an internet connection.\n"
+            "Python and the media/UI runtime are included; no system Python is required.\n"
+            "In Installation, download PyTorch, then review the model license and download Phonon-2 (English)\n"
+            "or Phonon-2.5 (multilingual). PyTorch and model downloads require an internet connection.\n"
             "Keep app/ and runtime/ next to the executable. Settings and results are stored in data/.\n"
             "The application is AGPL-3.0-only. Component and model licenses are separate.\n", encoding="utf-8")
         (stage / "runtime/portable.json").write_text(json.dumps({
             "format": "cytools-portable-runtime", "schemaVersion": 1,
             "python": "3.11.9", "pythonSource": PYTHON_URL, "pythonSha256": PYTHON_SHA256,
             "platform": "windows-x64", "applicationVersion": version,
-            "modelWeightsIncluded": False,
+            "modelWeightsIncluded": False, "pytorchIncluded": False,
         }, indent=2) + "\n", encoding="utf-8")
         print(json.dumps({"state": "Built", "directory": str(stage)}), flush=True)
     if not (stage / "runtime/python/Scripts/python.exe").is_file():
@@ -127,6 +127,8 @@ def main():
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as bundle:
         for source in sorted(stage.rglob("*")):
             relative = source.relative_to(stage)
+            if relative.parts[0] == "runtime" and not (len(relative.parts) > 1 and (relative.parts[1] == "python" or relative.as_posix() == "runtime/portable.json")):
+                continue
             if not source.is_file() or relative.parts[0] == "data" or any(p in IGNORE for p in relative.parts):
                 continue
             bundle.write(source, name + "/" + relative.as_posix())

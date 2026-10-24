@@ -1,7 +1,7 @@
 """Verified app-only GitHub releases; runtime ABI remains fixed, data is never replaced."""
 from pathlib import Path
 import json,os,re,sys,hashlib,zipfile,urllib.request,time
-ROOT=Path(__file__).resolve().parents[1];SETTINGS=ROOT/'data/settings';UPDATES=ROOT/'runtime/updates';TOOL_ID='cy.tools.subtitle';ABI='py311-fermion0214-core0101-subtitle1'
+ROOT=Path(__file__).resolve().parents[1];SETTINGS=ROOT/'data/settings';UPDATES=ROOT/'runtime/updates';TOOL_ID='cy.tools.subtitle';ABI='py311-fermion0214-core0101-subtitle2'
 def read(path,default=None):
     try:return json.loads(path.read_text('utf-8'))
     except FileNotFoundError:return {} if default is None else default

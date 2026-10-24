@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import sys
 import wave
+import runtime_components
+runtime_components.activate(Path(__file__).resolve().parents[1])
 
 
 def ffmpeg():
@@ -23,6 +25,8 @@ def command(args):
 
 def main(p):
     task=p["task"]
+    if task=="install_runtime":
+        return runtime_components.install(p["root"],p["destination"])
     if task=="repair":
         from timing import repair
         return repair(p["document"],**p["options"])
@@ -44,7 +48,7 @@ def main(p):
         return {"audio":p["destination"]}
     if task=="infer":
         # CLI isolates native CPU kernels; a local directory prevents implicit downloads.
-        args=[sys.executable,"-m","fermion.cli","transcribe",p["model_path"],p["audio"],"--json","--threads",str(p["threads"])]
+        args=[sys.executable,str(Path(__file__).with_name("phonon_cli.py")),"transcribe",p["model_path"],p["audio"],"--json","--threads",str(p["threads"])]
         if p.get("hotwords"):
             args += ["--hotwords",", ".join(p["hotwords"]),"--hotword-lambda",str(p["hotword_lambda"])]
         result=json.loads(command(args))
@@ -53,7 +57,7 @@ def main(p):
             raise RuntimeError("Phonon did not provide word timestamps; refusing estimated timing")
         return result
     if task=="install":
-        result=command([sys.executable,"-m","fermion.cli","transcribe",p["model"],"--download-only"])
+        result=command([sys.executable,str(Path(__file__).with_name("phonon_cli.py")),"transcribe",p["model"],"--download-only"])
         path=Path(result.strip().splitlines()[-1]).resolve()
         if not path.is_dir(): raise RuntimeError("Phonon did not return a verified model directory")
         return {"path":str(path),"model":p["model"]}
