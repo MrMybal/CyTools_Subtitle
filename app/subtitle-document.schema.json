@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "cytools-subtitles"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "words": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Seconds from source start."
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Seconds from source start."
+          }
+        },
+        "required": [
+          "text",
+          "start",
+          "end"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "cues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "speech",
+              "sound"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "start",
+          "end",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "media": {
+      "type": "object",
+      "properties": {
+        "durationSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "integer"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "audio",
+                  "video"
+                ]
+              },
+              "codec": {
+                "type": "string"
+              },
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "sampleRate": {
+                "type": "integer"
+              },
+              "channels": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "index",
+              "type",
+              "codec"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "durationSeconds",
+        "streams"
+      ],
+      "additionalProperties": false
+    },
+    "timingPolicy": {
+      "type": "object",
+      "properties": {
+        "max_chars": {
+          "type": "integer",
+          "default": 42,
+          "minimum": 10,
+          "maximum": 100,
+          "description": "Maximum characters per line; long unbreakable words are preserved."
+        },
+        "max_lines": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 4,
+          "description": "Maximum lines per speech cue."
+        },
+        "max_duration": {
+          "type": "number",
+          "default": 6,
+          "minimum": 0.5,
+          "maximum": 20,
+          "description": "Target maximum speech cue duration in seconds; a single word is never split."
+        },
+        "pause": {
+          "type": "number",
+          "default": 0.65,
+          "minimum": 0.1,
+          "maximum": 5,
+          "description": "Split speech after a silence gap of at least this many seconds."
+        },
+        "max_cps": {
+          "type": "number",
+          "default": 22,
+          "minimum": 5,
+          "maximum": 40,
+          "description": "Target maximum readable characters per second. Unavoidable violations remain reported."
+        },
+        "min_duration": {
+          "type": "number",
+          "default": 0.8,
+          "minimum": 0.2,
+          "maximum": 3,
+          "description": "Target minimum cue display duration in seconds, subject to synchronization limits."
+        },
+        "max_advance": {
+          "type": "number",
+          "default": 0.25,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Maximum seconds a caption may start early or end earlier than its source cue."
+        },
+        "max_delay": {
+          "type": "number",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Maximum permitted delay of cue onset in seconds; never accumulated across the track."
+        },
+        "max_extension": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Maximum seconds to extend a cue end, without overlapping another speech caption or exceeding media duration."
+        },
+        "min_gap": {
+          "type": "number",
+          "default": 0.04,
+          "minimum": 0,
+          "maximum": 0.5,
+          "description": "Minimum separation between speech captions in seconds."
+        },
+        "merge_fragments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Combine nearby short/fast/overlapping speech cues when the line and duration bounds permit; retain every word."
+        }
+      }
+    },
+    "timingAnchors": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lastStart": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lastEnd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "textSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "lastStart",
+          "lastEnd",
+          "textSha256"
+        ]
+      }
+    }
+  },
+  "required": [
+    "format",
+    "schemaVersion",
+    "cues"
+  ]
+}

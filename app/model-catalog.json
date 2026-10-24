@@ -1,0 +1,60 @@
+{
+  "engine": "fermion-research==0.2.14",
+  "source": "https://github.com/fermionresearch/phonon",
+  "profiles": {
+    "five-value": {
+      "repo": "FermionResearch/Phonon-2",
+      "name": "Phonon-2",
+      "character": "Five-value Parakeet-TDT; English",
+      "backend": "phonon2-five-value",
+      "filename": "phonon-2.fsq",
+      "sha256": "11ecbe2a8a7b308cfc54d96f13b3c910d28f496dd9b265794e86b942d8bc9e70",
+      "download_bytes": 158127742,
+      "fallback": {
+        "filename": "phonon-2.bps.tar.zst",
+        "sha256": "98125795b6dda72f5c6eee9ba33d19815df65dcb18b50a357bf9f73c9935309e",
+        "download_bytes": 163515201
+      },
+      "unpacked_bytes": 177716675,
+      "unpack_dir": "model_phonon2_c4c_int6",
+      "published": true
+    },
+    "five-value-25": {
+      "repo": "FermionResearch/Phonon-2.5",
+      "name": "Phonon-2.5",
+      "character": "Five-value Parakeet-TDT; 25 languages",
+      "backend": "phonon2-five-value",
+      "filename": "phonon-2.5.fsq",
+      "sha256": "49da2dbe8301433caf7486368afa98c8d1a0e0477fbbc465895713ff6b510a66",
+      "download_bytes": 156181652,
+      "fallback": {
+        "filename": "phonon-2.5.bps.tar.zst",
+        "sha256": "1faa04053a472cabab3bc31d07f30c23f22906f71044ca10eb1f0de36d1f19a9",
+        "download_bytes": 162587031
+      },
+      "unpacked_bytes": 177871642,
+      "unpack_dir": "model_phonon25_f25x1_48k_int6",
+      "lead_pad_s": 0.25,
+      "final_sigma": true,
+      "published": true
+    },
+    "five-value-25-en": {
+      "repo": "FermionResearch/Phonon-2.5-English",
+      "name": "Phonon-2.5 English",
+      "character": "Five-value Parakeet-TDT; English",
+      "backend": "phonon2-five-value",
+      "filename": "phonon-2.5-en.fsq",
+      "sha256": "87dacb412f42c736967345a42455c05fa7b1835fd2d0b40ce2fbfbfd415bdadd",
+      "download_bytes": 157616598,
+      "fallback": {
+        "filename": "phonon-2.5-en.bps.tar.zst",
+        "sha256": "6bd8119ac5a637e5ece0666f5c1e43dbcd99e1c36b3d0ef3ec5f9b58260a9dd4",
+        "download_bytes": 163693770
+      },
+      "unpacked_bytes": 177757399,
+      "unpack_dir": "model_phonon25_en_pen2u1125_int6",
+      "lead_pad_s": 0.0,
+      "published": true
+    }
+  }
+}

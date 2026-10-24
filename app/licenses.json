@@ -1,0 +1,56 @@
+[
+  {
+    "kind": "Engine",
+    "name": "Fermion / Phonon CLI 0.2.14",
+    "license": "Apache-2.0",
+    "url": "https://github.com/fermionresearch/phonon"
+  },
+  {
+    "kind": "Model",
+    "name": "Phonon-2",
+    "license": "CC-BY-4.0",
+    "url": "https://huggingface.co/FermionResearch/Phonon-2"
+  },
+  {
+    "kind": "Model",
+    "name": "Phonon-2.5",
+    "license": "CC-BY-4.0",
+    "url": "https://huggingface.co/FermionResearch/Phonon-2.5"
+  },
+  {
+    "kind": "Model",
+    "name": "Phonon-2.5 English",
+    "license": "CC-BY-4.0",
+    "url": "https://huggingface.co/FermionResearch/Phonon-2.5-English"
+  },
+  {
+    "kind": "SDK",
+    "name": "CyToolsCore 0.10.1",
+    "license": "MIT",
+    "url": "https://github.com/MrMybal/CyToolsCore"
+  },
+  {
+    "kind": "Dependency",
+    "name": "Dear ImGui / imgui-bundle",
+    "license": "MIT (individual bundled components keep their own licenses)",
+    "url": "https://github.com/pthom/imgui_bundle"
+  },
+  {
+    "kind": "Dependency",
+    "name": "PyAV",
+    "license": "BSD-3-Clause (linked FFmpeg keeps its own license)",
+    "url": "https://github.com/PyAV-Org/PyAV"
+  },
+  {
+    "kind": "Dependency",
+    "name": "FFmpeg binary supplied by imageio-ffmpeg",
+    "license": "GPL build; consult ffmpeg-build.txt and bundled notices",
+    "url": "https://github.com/imageio/imageio-ffmpeg"
+  },
+  {
+    "kind": "Dependency",
+    "name": "sounddevice / PortAudio",
+    "license": "MIT / PortAudio license",
+    "url": "https://github.com/spatialaudio/python-sounddevice"
+  }
+]

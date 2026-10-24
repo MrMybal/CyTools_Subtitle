@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "CyTools_Subtitle": {
+      "command": "C:/CyTools/CyTools_Subtitle/runtime/python/Scripts/python.exe",
+      "args": [
+        "C:/CyTools/CyTools_Subtitle/app/tool.py",
+        "--data-dir",
+        "C:/CyTools/CyTools_Subtitle/data/mcp",
+        "mcp"
+      ]
+    }
+  }
+}

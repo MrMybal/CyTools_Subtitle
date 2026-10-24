@@ -1,0 +1,10 @@
+$ErrorActionPreference = 'Stop'
+$toolRoot = Split-Path -Parent $PSScriptRoot
+$privatePython = Join-Path $toolRoot 'runtime/python/Scripts/python.exe'
+if (-not (Test-Path -LiteralPath $privatePython)) {
+    & py -3.11 -m venv (Join-Path $toolRoot 'runtime/python')
+    if ($LASTEXITCODE -ne 0) { throw 'Python 3.11 required; install it from python.org.' }
+}
+& $privatePython -m pip install --keyring-provider disabled --find-links (Join-Path $PSScriptRoot 'packages') -r (Join-Path $PSScriptRoot 'requirements.txt')
+if ($LASTEXITCODE -ne 0) { throw 'Private runtime installation failed.' }
+Write-Host 'Ready. Launch CyTools_Subtitle.exe; use Installation for model downloads.'

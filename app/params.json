@@ -1,0 +1,9 @@
+{
+  "media": "D:/replace/with/your/video.mp4",
+  "model": "phonon-2",
+  "device": "cpu",
+  "threads": 4,
+  "filter": "none",
+  "chunk_seconds": 24,
+  "overlap_seconds": 2
+}
