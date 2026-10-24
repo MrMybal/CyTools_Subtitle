@@ -22,3 +22,5 @@ Preuves : data/reports/. Sources, licences et guides : app/.
 
 
 Version 0.2.0 : la correction des durées et chevauchements est automatique pour les nouvelles générations. Dans Subtitle editor, le bouton **Repair reading time and overlaps** corrige aussi un ancien résultat sans relancer Phonon. Les limites se règlent dans Segmentation & layout ; les cas trop rapides restent signalés pour préserver la synchronisation et le texte complet.
+
+Version 0.2.1 : l’application est sous GNU Affero General Public License version 3 uniquement (AGPL-3.0-only), copyright (c) 2026 Cyberalien. Voir LICENSE. Le SDK CyToolsCore reste MIT ; les bibliothèques et modèles conservent leurs licences respectives.

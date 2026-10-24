@@ -1,4 +1,4 @@
-# CyTools_Subtitle 0.2.0
+# CyTools_Subtitle 0.2.1
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
@@ -52,6 +52,8 @@ Updates requires a configured owner/repository. Expected latest-release assets: 
 ## Verification and licenses
 
 Private Python: -m pytest app/test_tool.py -q. app/validate_delivery.py runs actual video transcription through MCP, corrections/reflow/export/FinishTask, native audio/video playback and seek, and real cancellation. It requires local validation samples, installed models and an audio device. Evidence: data/reports/. Details: Docs/CapabilityCoverage.md and Docs/Validation.md.
+
+Copyright (c) 2026 Cyberalien. CyTools_Subtitle is licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only); see LICENSE for the complete terms. The CyToolsCore SDK remains MIT.
 
 Windows x64 validated locally. Linux/macOS Unknown. Component declarations and full installed notices: licenses.json, LICENCES/, LICENSE and LICENSE-CyToolsCore.txt. Model weights keep CC-BY-4.0; the Phonon runtime keeps Apache-2.0; FFmpeg builds retain their GPL/LGPL obligations.
 

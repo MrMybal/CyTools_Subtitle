@@ -55,4 +55,4 @@ The optional delivery integration script requires locally generated sample clips
 
 ## License
 
-The application and CyToolsCore use MIT. Engines, libraries and model weights retain their separate licenses, including Apache-2.0, CC-BY-4.0 and the relevant FFmpeg build licenses. See [LICENSE](LICENSE), [LICENCES](LICENCES/SOURCES.txt) and app/LICENCES.
+Copyright (c) 2026 Cyberalien. CyTools_Subtitle is licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only). The bundled CyToolsCore SDK remains MIT. Engines, libraries and model weights retain their separate licenses, including Apache-2.0, CC-BY-4.0 and the relevant FFmpeg build licenses. See [LICENSE](LICENSE), [LICENCES](LICENCES/SOURCES.txt) and app/LICENCES.

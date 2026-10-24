@@ -1,3 +1,5 @@
+CyTools_Subtitle (AGPL-3.0-only): https://github.com/MrMybal/CyTools_Subtitle
+Application license: ../LICENSE (also ../app/LICENSE)
 CyToolsCore 0.10.1 (MIT): https://github.com/MrMybal/CyToolsCore
 Integration guide: https://github.com/MrMybal/CyToolsCore/blob/main/Docs/AgentGuide.md
 CyUEMCPSDK reference (not distributed here): https://github.com/MrMybal/CyUEMCPSDK
