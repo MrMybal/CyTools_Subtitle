@@ -19,7 +19,7 @@ def check():
     settings=read_settings();repo=settings.get('repository','')
     if not re.fullmatch(r'[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+',repo):raise ValueError('Configure the Tool GitHub repository first. No public repository is assumed.')
     with request('https://api.github.com/repos/'+repo+'/releases/latest')as response:release=json.load(response)
-    value={'repository':repo,'release':release,'installed':'0.1.0'};write(SETTINGS/'update-available.json',value);return value
+    value={'repository':repo,'release':release,'installed':read(ROOT/'app/release.json').get('version','Unknown')};write(SETTINGS/'update-available.json',value);return value
 
 def extract(archive,destination):
     destination=Path(destination).resolve()

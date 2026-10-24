@@ -1,10 +1,10 @@
-# CyTools_Subtitle 0.2.1
+# CyTools_Subtitle 0.2.2
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
 ## Desktop
 
-Launch ../CyTools_Subtitle.exe. English is the default; French is selectable in Options. Select an audio/video source and Generate subtitles. The player streams decoding off the UI thread, overlays active captions and supports pause/seek. Source and preview pixel dimensions are displayed. The editor changes individual cue text/start/end, shifts the track, adds sound captions and exports SRT/VTT/JSON. Reflow explicitly rebuilds speech from original word timings, replacing manual speech edits while preserving sound captions.
+The Windows portable release includes Python and dependencies: extract the complete archive, then launch ../CyTools_Subtitle.exe. Source checkouts require install.ps1 first. English is the default; French is selectable in Options. Select an audio/video source and Generate subtitles. The player streams decoding off the UI thread, overlays active captions and supports pause/seek. Source and preview pixel dimensions are displayed. The editor changes individual cue text/start/end, shifts the track, adds sound captions and exports SRT/VTT/JSON. Reflow explicitly rebuilds speech from original word timings, replacing manual speech edits while preserving sound captions.
 
 Phonon-2 and Phonon-2.5 English: English only. Phonon-2.5: multilingual, including French. These models do not translate, diarize speakers or classify background sounds. CPU is the only integrated execution device; no unused GPU/LoRA controls. Voice filtering is highpass/lowpass plus FFT denoise, not neural vocal separation.
 

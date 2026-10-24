@@ -6,3 +6,11 @@ CyUEMCPSDK reference (not distributed here): https://github.com/MrMybal/CyUEMCPS
 Phonon: https://github.com/fermionresearch/phonon
 SciPy: https://github.com/scipy/scipy
 Other third-party notices: ../app/LICENCES and ../app/licenses.json
+
+FFmpeg 7.1 (GPLv3 build supplied by imageio-ffmpeg 0.6.0):
+  Upstream source archive: https://ffmpeg.org/releases/ffmpeg-7.1.tar.xz
+  Source tag: https://github.com/FFmpeg/FFmpeg/tree/n7.1
+  Windows binary distributor and linked-library inventory: https://www.gyan.dev/ffmpeg/builds/
+  imageio-ffmpeg packaging source: https://github.com/imageio/imageio-ffmpeg/tree/v0.6.0
+  Build configuration: ../app/LICENCES/ffmpeg-build.txt
+  License text: ../app/LICENCES/FFmpeg-GPL-3.0.txt

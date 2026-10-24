@@ -15,7 +15,13 @@ Local subtitle generation from audio and video, with a Dear ImGui media player, 
 - The same operations through the desktop editor, MCP, CLI and authenticated HTTP service.
 - English/French UI, persistent preferences, configuration save/load, model installation and compatible local references.
 
-## Windows setup
+## Windows portable download
+
+Download `CyTools_Subtitle-0.2.2-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the application dependencies are included. No system Python installation is required. In **Installation**, review the model license and download Phonon-2 or Phonon-2.5. Model weights are downloaded separately.
+
+English is the default interface language; French is selectable in Options. Keep app/ and runtime/ next to the executable. Settings, models and outputs are created in data/. Private release downloads require a GitHub account with access to the repository. The in-app updater currently supports public release downloads; use the browser while this repository is private.
+
+## Windows source setup
 
 Python 3.11 is required. In PowerShell from this directory:
 
@@ -25,7 +31,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File app/install.ps1
 
 Open **CyTools_Subtitle.exe**, then use **Installation** to review the model license and download a model. Choose your audio/video source and Generate subtitles. Review the result in the player and export the wanted files.
 
-The environment is created privately in runtime/python. Source checkouts exclude model weights, installed environments, caches and generated results. The supplied venv setup requires machine Python; a portable interpreter is not bundled.
+The environment is created privately in runtime/python. Source checkouts exclude model weights, installed environments, caches and generated results. The source setup creates a venv and requires machine Python. The Windows portable release includes its own interpreter.
 
 CPU inference is implemented and tested on Windows x64. The Linux installer/launcher is supplied but unvalidated; Linux/macOS status remains Unknown. GPU, neural vocal separation, translation, diarization and automatic environmental-sound classification are not implemented. Voice filtering is bandpass plus FFT denoise.
 
@@ -52,6 +58,10 @@ The actual MIT CyToolsCore 0.10.1 wheel is included in app/packages. Business co
 ```
 
 The optional delivery integration script requires locally generated sample clips, installed models and an audio device. Test evidence and platform limits are described in [Validation](app/Docs/Validation.md).
+
+## Windows release build
+
+Build from a Windows x64 CPython 3.11 environment with the pinned dependencies. Compile the launcher with `app/build_launcher.ps1` from a Visual Studio developer prompt. Run `python app/build_windows.py`, validate and relocate the generated directory, then run `python app/build_windows.py --package-only --directory PATH`. The builder downloads the official Python embeddable package, verifies its pinned SHA256 and installs dependencies into a fresh directory using `app/windows-constraints.txt`. It does not copy an existing venv. `app/build_release.py` builds the app update and corresponding application source archives.
 
 ## License
 

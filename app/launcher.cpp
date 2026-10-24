@@ -9,7 +9,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR arguments, int) {
     std::wstring command = L"\"" + python + L"\" \"" + root + L"\\app\\bootstrap.py\" " + arguments;
     STARTUPINFOW startup{}; startup.cb = sizeof(startup); PROCESS_INFORMATION process{};
     if (!CreateProcessW(python.c_str(), command.data(), nullptr, nullptr, FALSE, 0, nullptr, root.c_str(), &startup, &process)) {
-        MessageBoxW(nullptr, L"Runtime manquant ou lancement impossible. Consulter LISEZ-MOI.md.", L"CyTools_Subtitle", MB_ICONERROR); return 1;
+        MessageBoxW(nullptr, L"The runtime is missing or could not start. Extract the complete Windows package and consult README.md.", L"CyTools_Subtitle", MB_ICONERROR); return 1;
     }
     CloseHandle(process.hThread); CloseHandle(process.hProcess); return 0;
 }

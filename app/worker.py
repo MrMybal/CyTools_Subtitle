@@ -44,8 +44,7 @@ def main(p):
         return {"audio":p["destination"]}
     if task=="infer":
         # CLI isolates native CPU kernels; a local directory prevents implicit downloads.
-        executable=Path(sys.executable).parent/("fermion.exe" if os.name=="nt" else "fermion")
-        args=[str(executable),"transcribe",p["model_path"],p["audio"],"--json","--threads",str(p["threads"])]
+        args=[sys.executable,"-m","fermion.cli","transcribe",p["model_path"],p["audio"],"--json","--threads",str(p["threads"])]
         if p.get("hotwords"):
             args += ["--hotwords",", ".join(p["hotwords"]),"--hotword-lambda",str(p["hotword_lambda"])]
         result=json.loads(command(args))
@@ -54,8 +53,7 @@ def main(p):
             raise RuntimeError("Phonon did not provide word timestamps; refusing estimated timing")
         return result
     if task=="install":
-        executable=Path(sys.executable).parent/("fermion.exe" if os.name=="nt" else "fermion")
-        result=command([str(executable),"transcribe",p["model"],"--download-only"])
+        result=command([sys.executable,"-m","fermion.cli","transcribe",p["model"],"--download-only"])
         path=Path(result.strip().splitlines()[-1]).resolve()
         if not path.is_dir(): raise RuntimeError("Phonon did not return a verified model directory")
         return {"path":str(path),"model":p["model"]}

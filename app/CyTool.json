@@ -3,7 +3,7 @@
   "protocolVersion": "1.0",
   "id": "cy.tools.subtitle",
   "name": "CyTools_Subtitle",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Local Phonon subtitles with word timing, bounded audio processing, media preview and MCP editing.",
   "vendor": "Cyberalien",
   "author": "Cyberalien",
@@ -1551,7 +1551,7 @@
     }
   ],
   "standaloneExecutable": "CyTools_Subtitle.exe",
-  "distributionStatus": "Windows x64 locally validated; private Python environment required; Linux/macOS unvalidated.",
+  "distributionStatus": "Windows x64 CPU locally validated; portable CPython 3.11.9 runtime included in the Windows release; source setup requires Python 3.11; Linux/macOS unvalidated.",
   "license": "AGPL-3.0-only",
   "repository": "https://github.com/MrMybal/CyTools_Subtitle",
   "homepage": "https://github.com/MrMybal/CyTools_Subtitle"
