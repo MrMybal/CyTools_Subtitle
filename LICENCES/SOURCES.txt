@@ -23,3 +23,8 @@ Optional Pyannote Audio 4.0.7 (MIT): https://github.com/pyannote/pyannote-audio
 Community-1 weights (CC-BY-4.0; downloaded separately): https://huggingface.co/pyannote/speaker-diarization-community-1
 Optional CPU runtime pins and wheel SHA256: ../app/diarization-runtime-lock.json
 Full notices of its dependencies remain in the optional installed runtime.
+
+Optional NVIDIA NeMo-Speech.cpp 0.2.0 (Apache-2.0): https://github.com/NVIDIA/NeMo-Speech.cpp/tree/v0.2.0
+Nemotron 3 Diarization (OpenMDW-1.1; weights downloaded separately): https://huggingface.co/nvidia/Nemotron-3-Diarization
+Model license: https://openmdw.ai/license/1-1/
+Pinned native runtime and official GGUF hashes: ../app/nemotron-catalog.json

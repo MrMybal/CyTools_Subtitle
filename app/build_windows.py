@@ -107,7 +107,7 @@ def main():
             "Python and the media/UI runtime are included; no system Python is required.\n"
             "In Installation, download PyTorch, then review the model license and download Phonon-2 (English)\n"
             "or Phonon-2.5 (multilingual). PyTorch and model downloads require an internet connection.\n"
-            "Optional speaker identification downloads its own runtime and Community-1 model after Hugging Face access review.\n"
+            "Optional speaker identification downloads its own Community-1 CPU or NVIDIA CPU/CUDA runtime and model after license review.\n"
             "Keep app/ and runtime/ next to the executable. Settings and results are stored in data/.\n"
             "The application is AGPL-3.0-only. Component and model licenses are separate.\n", encoding="utf-8")
         (stage / "runtime/portable.json").write_text(json.dumps({

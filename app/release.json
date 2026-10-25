@@ -1,5 +1,5 @@
 {
   "runtime_abi": "py311-fermion0214-core0101-subtitle2",
   "platform": "win32",
-  "version": "0.5.1"
+  "version": "0.6.0"
 }

@@ -14,7 +14,7 @@ Archive Windows portable : extrayez tout le ZIP dans un dossier accessible en é
 
 **IA/MCP** : consultez [app/README.md](app/README.md) et app/mcp-config.example.json. Les chemins absolus sont acceptés sans copie manuelle. Exportez les résultats souhaités avant la fin d’une tâche IA temporaire.
 
-Windows x64 et calcul CPU testés. Linux/macOS non validés. Le paquet Windows portable 0.2.2 inclut son propre Python 3.11.9. L’installation depuis les sources requiert Python 3.11 et app/install.ps1 ou app/install.sh.
+Windows x64 et calcul CPU testés. Linux/macOS non validés. Le paquet Windows portable inclut son propre Python 3.11.9. L’installation depuis les sources requiert Python 3.11 et app/install.ps1 ou app/install.sh.
 
 Le dépôt GitHub se configure dans **Updates** ; aucun dépôt public présumé. Les mises à jour app/ s’activent au redémarrage avec restauration, en préservant data/ et runtime/.
 
@@ -36,3 +36,5 @@ Version 0.4.1 : correction du crash de prévisualisation avec certaines largeurs
 Version 0.5.0 : identification facultative des locuteurs avec Community-1, noms modifiables, attribution par réplique et exports avec noms. Installez séparément le moteur CPU et les poids dans Installation après acceptation des conditions Hugging Face. Aucun jeton dans les configurations ou paramètres MCP.
 
 0.5.1 : correction des sous-titres réduits à de la ponctuation et des coupures parasites en bord de mot. Les mots et les détections brutes du modèle sont conservés ; les erreurs de transcription et de locuteur doivent toujours être relues.
+
+Version 0.6.0 : moteur facultatif NVIDIA Nemotron 3 pour attribuer les voix, sur CPU ou CUDA. Dans Installation, consultez puis acceptez explicitement les licences OpenMDW 1.1 (modèle) et Apache 2.0 (runtime), et téléchargez le runtime choisi ainsi que le modèle Q8_0. En génération ou dans Speakers, choisissez NVIDIA et CPU/CUDA. Phonon continue de produire le texte et ses timings ; le GPU NVIDIA concerne ici l’attribution des voix. Le modèle (~107 Mo) et le runtime (~6 Mo CPU / ~102 Mo CUDA) sont téléchargés séparément. Certains passages peuvent rester sans locuteur et doivent être relus. Voir [le guide NVIDIA](app/Docs/NvidiaDiarization.md).

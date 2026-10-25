@@ -17,7 +17,7 @@ Local subtitle generation from audio and video, with a Dear ImGui media player, 
 
 ## Windows portable download
 
-Download `CyTools_Subtitle-0.5.1-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
+For the latest published Windows build, download the portable ZIP from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
 
 English is the default interface language; French is selectable in Options. Keep app/ and runtime/ next to the executable. Settings, models and outputs are created in data/. Private release downloads require a GitHub account with access to the repository. The in-app updater currently supports public release downloads; use the browser while this repository is private.
 
@@ -33,7 +33,7 @@ Open **CyTools_Subtitle.exe**, then use **Installation** to review the model lic
 
 The environment is created privately in runtime/python. Source checkouts exclude model weights, installed environments, caches and generated results. The source setup creates a venv and requires machine Python. The Windows portable release includes its own interpreter. PyTorch is installed separately through Installation.
 
-CPU inference is implemented and tested on Windows x64. The Linux installer/launcher is supplied but unvalidated; Linux/macOS status remains Unknown. GPU, neural vocal separation, translation and automatic environmental-sound classification are not implemented. Optional Community-1 speaker diarization is described below. Voice filtering is bandpass plus FFT denoise.
+CPU inference is implemented and tested on Windows x64. The Linux installer/launcher is supplied but unvalidated; Linux/macOS status remains Unknown. Phonon transcription and Community-1 run on CPU. Optional NVIDIA Nemotron 3 speaker analysis supports CPU or CUDA on Windows x64. Neural vocal separation, translation and automatic environmental-sound classification are not implemented. Voice filtering is bandpass plus FFT denoise.
 
 ## MCP and CLI
 
@@ -98,6 +98,14 @@ The JSON document remains schemaVersion 1 with additive optional `speakers`, `di
 
 CLI/MCP operations: `diarization_status`, `check_diarization_access`, `install_diarization_runtime`, `install_diarization_model`, `register_diarization_model`, `diarize_subtitles`, and `rename_speakers`. Network installation/access operations require an authenticated network permission and install operations require explicit license review. Local model registration references an official compatible Community-1 bundle in place and hashes its files. All file inputs are automatically imported privately; export wanted outputs before FinishTask.
 
-CPU/Windows is the integrated diarization path. GPU execution, speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](app/Docs/Diarization.md) for the precise validation state.
+Community-1 uses the CPU/Windows path. NVIDIA CUDA is available through the separate optional engine below. Speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](app/Docs/Diarization.md) for the precise validation state.
 
 Version 0.5.1 fixes punctuation-only captions and spurious word-boundary splits introduced by small ASR/voice timestamp differences. Original word timestamps and raw neural timelines remain unchanged; speaker/transcription mistakes still need review.
+
+## Optional NVIDIA speaker analysis (0.6.0)
+
+In **Installation**, open **Speaker identification · NVIDIA Nemotron 3**, review the separate OpenMDW 1.1 model and Apache 2.0 runtime licenses, then install the CPU or CUDA runtime and model. Downloads are separate from the base ZIP: approximately 6 MB for CPU or 102 MB for CUDA, plus a 107 MB Q8_0 model. No additional Python/PyTorch installation is needed for this engine.
+
+Enable **Identify different speakers**, select **NVIDIA Nemotron 3**, then CPU or CUDA. This changes voice attribution; Phonon still transcribes and supplies word timestamps. The default chunked quality preset retains global voice state; full attention is limited to six minutes. NVIDIA detects up to eight anonymous voices automatically. The settings and native segmentation thresholds are also available through MCP and versioned generation configurations.
+
+The editor shows the actual voice-analysis device and unassigned captions. Changing models creates new anonymous identities; replacing existing manual speaker assignments requires an explicit choice. Existing text and times remain intact unless caption rebuilding is requested. See [NVIDIA installation, options and limits](app/Docs/NvidiaDiarization.md) and [validation evidence](app/Docs/Validation.md). The tested natural dialogue showed better main-turn separation, with some speech still unassigned; no general quality guarantee is implied.

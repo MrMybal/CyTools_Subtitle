@@ -1,4 +1,4 @@
-# Native capability coverage — CyTools_Subtitle 0.3.0
+# Native capability coverage — CyTools_Subtitle 0.6.0
 
 Inventory source: fermion-research 0.2.14 installed CLI help, fermion/_speech engine implementation, https://github.com/fermionresearch/phonon/blob/main/docs/cli.md and https://www.fermionresearch.com/docs/speech/. Scope: local file transcription and subtitle authoring. Status below distinguishes actual execution from available code.
 
@@ -59,7 +59,28 @@ Native inventory: pyannote.audio 4.0.7 `Pipeline.from_pretrained` and `SpeakerDi
 | Runtime installation | install_diarization_runtime | License review / install | Real hashed wheel installation and CPU import verified |
 | Manual voice/name corrections | edit_subtitles speaker, rename_speakers | Cue speaker / names | Real runtime and GUI jobs, export and cleanup |
 | Progress callback | No arbitrary callable input | Existing jobs/logs | Worker phase and native logs; not fabricated per-batch percentages |
-| GPU / multi-GPU | Excluded for this release | CPU explicitly shown | No GPU runtime path validated |
+| GPU / multi-GPU | Excluded for Community-1 | CPU explicitly shown | NVIDIA CUDA uses a separate engine below |
 | Training, custom classes, biometric embeddings | Excluded | None | Outside file subtitle attribution; no arbitrary Python classes or code parameters |
 
 All options are available in Advanced operations and generation configurations. Raw words and manual caption text are not overwritten by speaker attribution; explicit reflow/rebuild keeps its documented replacement behavior.
+
+## Optional NVIDIA Nemotron 3 (0.6.0)
+
+Inventory: official NeMo-Speech.cpp v0.2.0 CLI help/configuration and native diarization source, plus NVIDIA's Nemotron-3-Diarization model card. Only its pinned Windows CPU/CUDA diarization path is integrated; this is not NVIDIA speech transcription.
+
+| Native capability | Operation / fields | Standalone | Evidence |
+|---|---|---|---|
+| Q8_0 Sortformer global activity | diarization_engine=nemotron3 | Engine selector | Same natural capture, CPU/CUDA/full runs |
+| CPU / CUDA:0 | nemotron_device | Device selector | Native doctor and actual result device; no silent fallback |
+| Streaming quality / low latency / full attention | nemotron_mode, nemotron_preset | Speaker settings | Chunked and full executed; full limited to 360 s |
+| Custom cache/context geometry | nemotron_chunk/right_context/left_context/fifo/spkcache/update_period | Custom preset fields | Real custom preset run, exact CLI forwarding and compatibility checks |
+| Activity thresholds and durations | nemotron_onset/offset/pad_onset/pad_offset/min_duration_on/min_duration_off | Advanced segmentation fields | Real nondefault thresholds/zero padding run; native flags |
+| CPU resource cap | threads | CPU threads | Worker affinity inherited by real native child |
+| Automatic speaker count, up to eight | Fixed native behavior | Explained in form | Count/batch overrides for Community-1 rejected |
+| Overlapping activity | Raw segments + derived exclusiveSegments | Reviewable cue candidates | Overlap regression test; derived policy recorded |
+| Verified runtime/model install, local reference | install_nemotron_*, register_nemotron_model | Installation | Both runtimes and model installed through authenticated operations |
+| Hardware diagnostics | nemotron_diagnostics | Check selected runtime | Actual compatible GPU detected |
+| Device memory, lifecycle | SDK reservations, ProcessWorker | Existing jobs/cancel | CUDA reservation and real native-child cancellation check |
+| Other native ASR/translation/server functions | Excluded | None | Outside this optional voice-attribution component |
+
+The same public schemas serve MCP and desktop. Run-time diagnostics, immutable words, renamed/manual voices, exports and task cleanup use the existing composable document contract. See [NVIDIA guide](NvidiaDiarization.md).

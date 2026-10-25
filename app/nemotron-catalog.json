@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "runtimeVersion": "0.2.0",
+  "runtimeSource": "https://github.com/NVIDIA/NeMo-Speech.cpp/tree/v0.2.0",
+  "runtimeLicense": "Apache-2.0",
+  "model": {
+    "id": "nvidia/Nemotron-3-Diarization",
+    "revision": "f667ed73aee57d40cc39428eb768b4fd87a0a29e",
+    "filename": "Nemotron-3-Diarization.q8_0.gguf",
+    "sha256": "08456d9e22cd9a323c0364d98375f3746d6e68507ebb705cd46438c534c7a3a1",
+    "size": 107012128,
+    "license": "OpenMDW-1.1",
+    "url": "https://huggingface.co/nvidia/Nemotron-3-Diarization/resolve/f667ed73aee57d40cc39428eb768b4fd87a0a29e/Nemotron-3-Diarization.q8_0.gguf",
+    "source": "https://huggingface.co/nvidia/Nemotron-3-Diarization",
+    "licenseUrl": "https://openmdw.ai/license/1-1/"
+  },
+  "runtimes": {
+    "cpu": {
+      "url": "https://github.com/NVIDIA/NeMo-Speech.cpp/releases/download/v0.2.0/nemo-speech-0.2.0-windows-x86_64-cpu.zip",
+      "sha256": "82c80451086e86194aba9af19f800da77cd66d1c28d993d0efceffd6cdb49bb8",
+      "size": 5528418,
+      "executable": "nemo-speech-0.2.0-windows-x86_64-cpu/bin/nemo-speech.exe"
+    },
+    "cuda": {
+      "url": "https://github.com/NVIDIA/NeMo-Speech.cpp/releases/download/v0.2.0/nemo-speech-0.2.0-windows-x86_64-cuda.zip",
+      "sha256": "9ffe5e842c39a7d3211f3b2c3b3aa1bca8c0b2455d96d961ed5f22ec5108f98d",
+      "size": 102183465,
+      "executable": "nemo-speech-0.2.0-windows-x86_64-cuda/bin/nemo-speech.exe"
+    }
+  }
+}

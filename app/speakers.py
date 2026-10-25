@@ -46,7 +46,9 @@ def display_text(document,cue):
 class Timeline(list):
     def __init__(self,segments):
         super().__init__(sorted(segments,key=lambda t:t['start']))
-        self.ends=[turn['end'] for turn in self]
+        self.ends=[];latest=0.
+        for turn in self:
+            latest=max(latest,turn['end']);self.ends.append(latest)
 
 
 def attribution(start,end,segments,preferred=None):
@@ -64,12 +66,14 @@ def attribution(start,end,segments,preferred=None):
 
 
 def label_cues(document,replace_manual=False):
-    segments=Timeline(document.get("diarization",{}).get("exclusiveSegments",[]))
+    info=document.get('diarization',{})
+    segments=Timeline(info.get('exclusiveSegments',[]))
+    regular=Timeline(info.get('segments',info.get('exclusiveSegments',[])))
     for cue in document["cues"]:
         if cue.get("kind","speech")!="speech" or (cue.get("speakerManual") and not replace_manual):continue
         speaker,fraction,candidates=attribution(cue["start"],cue["end"],segments)
         cue["speaker"]=speaker or nearby_speaker(cue['start'],cue['end'],segments);cue["speakerOverlapFraction"]=round(fraction,4)
-        cue["speakerCandidates"]=candidates
+        cue["speakerCandidates"]=attribution(cue['start'],cue['end'],regular)[2] or candidates
         cue["speakerManual"]=False
     return document
 
@@ -118,8 +122,14 @@ def attach(document,result,*,rebuild=False,layout_options=None,replace_manual=Fa
     import subtitles
     changed=copy.deepcopy(subtitles.validate(document))
     existing={s["id"]:s["name"] for s in changed.get("speakers",[])}
-    # Keep explicit names for the same source recording only.
-    if changed.get("diarization",{}).get("mediaSha256")!=result.get("mediaSha256"):existing={}
+    previous=changed.get('diarization',{});model_changed=bool(previous.get('model') and previous['model']!=result['model'])
+    if model_changed and any(c.get('speakerManual') for c in changed['cues']) and not replace_manual:
+        raise ValueError('Changing speaker models requires explicit replacement of manual speaker assignments; their identities cannot be assumed equivalent')
+    if model_changed:
+        for cue in changed['cues']:
+            for key in ('speaker','speakerManual','speakerCandidates','speakerOverlapFraction'):cue.pop(key,None)
+    # Numeric IDs from different models are not verified person identities.
+    if model_changed or previous.get('mediaSha256')!=result.get('mediaSha256'):existing={}
     changed["speakers"]=[{**s,"name":existing.get(s["id"],s["name"])} for s in result["speakers"]]
     # Manual assignments must not refer to identities absent from a new analysis.
     valid={s["id"] for s in changed["speakers"]}

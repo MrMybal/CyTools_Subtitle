@@ -86,5 +86,19 @@
     "license": "BSD-3-Clause",
     "url": "https://github.com/pytorch/pytorch/blob/v2.8.0/LICENSE",
     "notes": "Isolated from the Phonon runtime. Versions and wheel hashes are pinned in diarization-runtime-lock.json."
+  },
+  {
+    "kind": "Engine",
+    "name": "NVIDIA NeMo-Speech.cpp 0.2.0 (optional native runtime)",
+    "license": "Apache-2.0; bundled dependencies retain their notices",
+    "url": "https://github.com/NVIDIA/NeMo-Speech.cpp/tree/v0.2.0",
+    "notes": "Separate CPU/CUDA downloads. Native runtime notices remain with each installed component."
+  },
+  {
+    "kind": "Model",
+    "name": "NVIDIA Nemotron 3 Diarization Q8_0 (optional)",
+    "license": "OpenMDW-1.1",
+    "url": "https://huggingface.co/nvidia/Nemotron-3-Diarization",
+    "notes": "Official pinned GGUF, downloaded separately after explicit license acceptance. Model/license sources are in nemotron-catalog.json."
   }
 ]

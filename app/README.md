@@ -1,4 +1,4 @@
-# CyTools_Subtitle 0.5.1
+# CyTools_Subtitle 0.6.0
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
@@ -12,7 +12,7 @@ The CyUI interface provides a sidebar workspace, resizable preview/inspector col
 
 The Windows portable release includes Python and media/UI dependencies; PyTorch is downloaded separately from Installation: extract the complete archive, then launch ../CyTools_Subtitle.exe. Source checkouts require install.ps1 first. English is the default; French is selectable in Options. Select an audio/video source and Generate subtitles. The player streams decoding off the UI thread, overlays active captions and supports pause/seek. Source and preview pixel dimensions are displayed. The editor changes individual cue text/start/end, shifts the track, adds sound captions and exports SRT/VTT/JSON. Reflow explicitly rebuilds speech from original word timings, replacing manual speech edits while preserving sound captions.
 
-Phonon-2 and Phonon-2.5 English: English only. Phonon-2.5: multilingual, including French. Phonon does not translate or classify background sounds. Speaker attribution is available through the optional Community-1 component. CPU is the only integrated execution device; no unused GPU/LoRA controls. Voice filtering is highpass/lowpass plus FFT denoise, not neural vocal separation.
+Phonon-2 and Phonon-2.5 English: English only. Phonon-2.5: multilingual, including French. Phonon does not translate or classify background sounds. Speaker attribution is available through optional Community-1 (CPU) or NVIDIA Nemotron 3 (CPU/CUDA) components. Phonon transcription remains CPU-only; NVIDIA device selection applies to voice analysis. LoRA is unsupported. Voice filtering is highpass/lowpass plus FFT denoise, not neural vocal separation.
 
 The model receives sequential bounded WAV windows, with overlap and word-midpoint ownership at boundaries. A window is deleted/reused rather than accumulating complete recording tensors. Transcription errors and boundary omissions/repetitions remain possible: review the result. Decoder timing uses native frame resolution; no timing precision or transcript completeness guarantee. Truncated inference fails explicitly and requests shorter windows.
 
@@ -90,4 +90,12 @@ The JSON document remains schemaVersion 1 with additive optional `speakers`, `di
 
 CLI/MCP operations: `diarization_status`, `check_diarization_access`, `install_diarization_runtime`, `install_diarization_model`, `register_diarization_model`, `diarize_subtitles`, and `rename_speakers`. Network installation/access operations require an authenticated network permission and install operations require explicit license review. Local model registration references an official compatible Community-1 bundle in place and hashes its files. All file inputs are automatically imported privately; export wanted outputs before FinishTask.
 
-CPU/Windows is the integrated diarization path. GPU execution, speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](Docs/Diarization.md) for the precise validation state.
+Community-1 uses CPU/Windows. NVIDIA CUDA is provided by the separate component below. Speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](Docs/Diarization.md) for the precise validation state.
+
+## NVIDIA Nemotron 3 (0.6.0)
+
+Install this optional engine separately in Installation after reviewing and explicitly accepting its runtime/model licenses. Select NVIDIA in the workspace, generation settings or editor Speakers panel, then choose CPU or CUDA. Phonon words/timestamps are unchanged. Voice identities are scoped to the engine and recording; switching engines does not reuse manually named identities silently.
+
+Operations: `nemotron_status`, `nemotron_diagnostics`, `install_nemotron_runtime`, `install_nemotron_model`, `register_nemotron_model`. Use `diarization_engine: "nemotron3"` with `transcribe` or `diarize_subtitles`. Installation requires authenticated network permission and `license_accepted: true`; defaults do not accept terms. Both the selected runtime and the official pinned Q8_0 GGUF must be ready. Existing local weights can be referenced without moving them.
+
+All NVIDIA mode, preset, custom geometry, segmentation and device fields are exposed through generation settings/configuration and the operation schemas. Community-1 count/batch settings must remain at their default values when using NVIDIA. A configuration load never starts inference. [NvidiaDiarization.md](Docs/NvidiaDiarization.md) describes limits, output metadata and evidence.

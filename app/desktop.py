@@ -10,7 +10,7 @@ from ui_common import imgui, run, configure_generation, tr
 from tool import APP, ROOT, create_runtime, model_records
 from preview import Player
 from file_drop import FileDrops
-from diarization_ui import Panel as SpeakerPanel, generation_options as speaker_options
+from diarization_ui import Panel as SpeakerPanel, generation_options as speaker_options, engine_selector as choose_speaker_engine, device_selector as choose_speaker_device
 import speakers
 import subtitles
 import updates
@@ -43,12 +43,15 @@ def main():
     test_repair='--ui-test-repair' in sys.argv
     test_preview='--ui-test-preview' in sys.argv
     test_speakers='--ui-test-speakers' in sys.argv;speaker_test_phase=0
+    test_nvidia=any(a.startswith('--ui-test-nvidia') for a in sys.argv);test_nvidia_generate='--ui-test-nvidia-generate' in sys.argv;nvidia_test_submitted=False;nvidia_completion_frame=0
+    if test_nvidia:
+        form.update(model='phonon-2.5',diarization=True,diarization_engine='nemotron3',nemotron_device=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-nvidia-device=')),'cuda'))
     test_started=time.monotonic();test_played=False
     test_media=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-media=')),None)
     test_drop='--ui-test-file-drop' in sys.argv
     drops=FileDrops();drop_count=0;preview_frames=0;render_error="";test_paused=False
     view='Workspace';search='';last_state=''
-    for flag,target in [('--ui-test-installation','Installation'),('--ui-test-repair','Subtitle editor'),('--ui-test-options','Options'),('--ui-test-logs','Application log'),('--ui-test-advanced','Advanced operations'),('--ui-test-speakers','Subtitle editor'),('--ui-test-speaker-installation','Installation')]:
+    for flag,target in [('--ui-test-installation','Installation'),('--ui-test-repair','Subtitle editor'),('--ui-test-options','Options'),('--ui-test-logs','Application log'),('--ui-test-advanced','Advanced operations'),('--ui-test-speakers','Subtitle editor'),('--ui-test-speaker-installation','Installation'),('--ui-test-nvidia-installation','Installation'),('--ui-test-nvidia-settings','Media & generation')]:
         if flag in sys.argv:view=target
     view=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-view=')),view)
     if test_preview:
@@ -116,11 +119,13 @@ def main():
             keys=("max_cps","min_duration","max_advance","max_delay","max_extension","min_gap","merge_fragments","max_chars","max_lines","max_duration","pause")
             submit("repair_subtitles",{"document":document_path,**{k:form[k] for k in keys}})
         def gui():
-            nonlocal speaker_test_phase,cue_speaker,drop_count,preview_frames,render_error,test_paused,view,search,last_state,job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
+            nonlocal nvidia_completion_frame,nvidia_test_submitted,speaker_test_phase,cue_speaker,drop_count,preview_frames,render_error,test_paused,view,search,last_state,job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
             frames+=1
             if test_speakers and frames==3:
                 submit('rename_speakers',{'document':document_path,'names':{'speaker-1':'Alice','speaker-2':'Bob'}});speaker_test_phase=1
             if frames==3 and test_media:open_path(test_media,'media')
+            if test_nvidia_generate and frames>=4 and form['media'] and not nvidia_test_submitted:
+                submit('transcribe',dict(form));nvidia_test_submitted=True
             for batch in drops.poll():
                 # A project is one media file and optionally one subtitle document.
                 if not batch:
@@ -134,7 +139,8 @@ def main():
             if (test_media or test_drop) and player.duration>0:
                 if not test_played:player.seek(.5,play=True);test_played=True
                 elif time.monotonic()-test_started>4 and not test_paused:player.stop();test_paused=True
-            if (test_media or test_drop) and time.monotonic()-test_started>9:runner.app_shall_exit=True
+            if (test_media or test_drop) and not test_nvidia_generate and time.monotonic()-test_started>9:runner.app_shall_exit=True
+            if test_nvidia_generate and time.monotonic()-test_started>120:raise RuntimeError('NVIDIA GUI generation test timed out')
             if frames==1 and document and document["cues"]:select_cue(0)
             if test_repair and frames==3:repair_current()
             if test_repair and frames>30 and job and job["state"] in ("Completed","Failed","Cancelled"):runner.app_shall_exit=True
@@ -161,7 +167,7 @@ def main():
                         subtitle_job=job
                         document_path=output["document"];document=subtitles.validate(json.loads(Path(document_path).read_text("utf-8")))
                         if document["cues"]:select_cue(0)
-                    if job['operationId'] in ('diarization_status','install_diarization_runtime','install_diarization_model','register_diarization_model'):
+                    if job['operationId'] in ('diarization_status','install_diarization_runtime','install_diarization_model','register_diarization_model','nemotron_status','install_nemotron_runtime','install_nemotron_model','register_nemotron_model'):
                         speaker_panel.refresh();ui_common._licenses=None
                         if hasattr(ui_common,'_dependencies'):del ui_common._dependencies
                     if job['operationId']=='check_diarization_access':speaker_panel.message=tr(output.get('message',output.get('state','')))
@@ -177,6 +183,11 @@ def main():
                 elif speaker_test_phase==2 and frames>25:
                     assert document['cues'][0]['speaker']=='speaker-2' and document['cues'][0]['speakerManual']
                     runner.app_shall_exit=True
+            if test_nvidia_generate and nvidia_test_submitted and not active and job and frames>25:
+                assert job['state']=='Completed',job.get('error')
+                assert document['diarization']['engine']=='nemotron3' and document['diarization']['device']==('cuda:0' if form['nemotron_device']=='cuda' else 'cpu')
+                if not nvidia_completion_frame:nvidia_completion_frame=frames
+                if frames>nvidia_completion_frame+12:runner.app_shall_exit=True
             # Keyboard actions are suppressed while typing into any field.
             io=imgui.get_io()
             if not io.want_text_input:
@@ -206,7 +217,8 @@ def main():
             cyui.sidebar_group(tr('APPLICATION'))
             for name,glyph in [('Installation',cyui.icon.download),('Updates',cyui.icon.refresh),('Advanced operations',cyui.icon.code),('Application log',cyui.icon.document),('Options',cyui.icon.settings)]:
                 if cyui.sidebar_item(glyph,tr(name),view==name):view=name
-            cyui.space(18);cyui.badge('CPU','neutral')
+            cyui.space(18);cyui.badge(tr('Transcription')+' · CPU','neutral')
+            if document and document.get('diarization',{}).get('device'):cyui.badge(tr('Voices')+' · '+document['diarization']['device'].upper(),'neutral')
             cyui.text_faint('SRT / WebVTT / JSON')
             cyui.end_sidebar()
             vp=imgui.get_main_viewport()
@@ -287,6 +299,12 @@ def main():
                 cyui.begin_card('##cue-summary',tr('Subtitles'))
                 if document:
                     warnings=subtitles.quality(document)
+                    analysis=document.get('diarization',{})
+                    if analysis.get('model'):
+                        engine_name='NVIDIA Nemotron 3' if analysis.get('engine')=='nemotron3' else analysis['model']
+                        cyui.text_dim(tr('Speaker analysis')+': '+engine_name+' · '+analysis.get('device',''))
+                        unassigned=sum(c.get('kind','speech')=='speech' and c.get('speaker') is None for c in document['cues'])
+                        if unassigned:cyui.badge(str(unassigned)+' '+tr('Captions without a speaker'),'warning')
                     cyui.badge(str(len(document['cues']))+' '+tr('Cues'),'neutral');imgui.same_line();cyui.badge(str(len(warnings))+' '+tr('Timing warnings'),'warning' if warnings else 'success')
                     _,search=cyui.search_field('##cue-search',search,tr('Search captions'))
                     if imgui.begin_table('##caption-table',3,imgui.TableFlags_.scroll_y|imgui.TableFlags_.row_bg|imgui.TableFlags_.borders_inner_h,(0,cyui.dp(210))):
@@ -309,13 +327,14 @@ def main():
                     cyui.property(tr('CPU threads'));_,form['threads']=imgui.slider_int('##quick-threads',form['threads'],1,32)
                     cyui.property(tr('Audio track (zero based)'));_,form['audio_stream']=imgui.slider_int('##quick-track',form['audio_stream'],0,31)
                     cyui.property(tr('Identify different speakers'));_,form['diarization']=imgui.checkbox('##quick-diarization',form['diarization'])
+                    if form['diarization']:choose_speaker_engine(form,'quick-speaker-engine');choose_speaker_device(form,'quick-nvidia-compute')
                     cyui.end_properties()
-                if form['diarization'] and not speaker_panel.info['ready']:cyui.callout('warning',tr('Install the optional speaker runtime and Community-1 model in Installation first.'))
+                if form['diarization'] and not speaker_panel.ready(form):cyui.callout('warning',tr('Install the selected speaker engine and model in Installation first.'))
                 cyui.text_dim(tr('Phrase captions with original word timings.'))
                 if not runtime_info['ready']:
                     cyui.callout('warning',tr('PyTorch is not installed. Open Installation to download it before generating subtitles.'))
                     if cyui.button(label('Installation')):view='Installation'
-                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media'] or (form['diarization'] and not speaker_panel.info['ready'])):
+                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media'] or (form['diarization'] and not speaker_panel.ready(form))):
                     if cyui.primary_button(label('Generate subtitles'),size=(-1,0)):submit('transcribe',dict(form))
                 if cyui.button(label('All generation settings'),size=(-1,0)):view='Media & generation'
                 cyui.end_card()
@@ -435,18 +454,21 @@ def main():
                         cyui.end_properties()
                     imgui.text_wrapped(tr("Local models are referenced in place. Only compatible Phonon-2 family directories; LoRA is not supported by this engine."))
                     cyui.end_section()
+                if '--ui-test-nvidia-settings' in sys.argv:imgui.set_next_item_open(True,imgui.Cond_.always)
                 if cyui.begin_section(label('Speaker identification'),False):
                     _,form['diarization']=imgui.checkbox('Identify different speakers',form['diarization'])
                     speaker_options(form)
-                    if form['diarization'] and not speaker_panel.info['ready']:cyui.callout('warning',tr('Install the optional speaker runtime and Community-1 model in Installation first.'))
+                    if '--ui-test-nvidia-settings' in sys.argv and frames>3:imgui.set_scroll_here_y(.2)
+                    if form['diarization'] and not speaker_panel.ready(form):cyui.callout('warning',tr('Install the selected speaker engine and model in Installation first.'))
                     cyui.end_section()
-                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media'] or (form['diarization'] and not speaker_panel.info['ready'])):
+                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media'] or (form['diarization'] and not speaker_panel.ready(form))):
                     if cyui.primary_button(label('Generate subtitles')):submit('transcribe',dict(form))
                 imgui.same_line()
                 with cyui.scoped_disabled(active or not form['media']):
                     if cyui.button(label('Inspect media')):submit('inspect_media',{'media':form['media'],'audio_stream':form['audio_stream'],'excerpt':True})
                 if not runtime_info['ready']:cyui.callout('warning',tr('PyTorch is not installed. Open Installation to download it before generating subtitles.'))
                 cyui.end_card()
+                if '--ui-test-nvidia-settings' in sys.argv and frames>3:imgui.set_scroll_here_y(1.0)
             elif view=='Subtitle editor':
                 if cyui.button(label("Open subtitle document")):choose("document")
                 imgui.same_line()
@@ -596,7 +618,7 @@ def main():
                 if model_status:imgui.text_wrapped(model_status)
                 cyui.end_card()
                 speaker_panel.installation(submit,active)
-                if "--ui-test-speaker-installation" in sys.argv and frames>3:imgui.set_scroll_here_y(1.0)
+                if any(a in sys.argv for a in ("--ui-test-speaker-installation","--ui-test-nvidia-installation")) and frames>3:imgui.set_scroll_here_y(1.0)
             elif view=='Updates':
                 cyui.begin_card('##updates',tr('GitHub updates'))
                 imgui.text_wrapped(tr("Configure the application GitHub repository. No public repository is assumed. Engine updates require a new tested runtime; model downloads are separate."))
@@ -634,6 +656,10 @@ def main():
         try:
             if automatic and github:future=pool.submit(updates.check)
             run(runner,shell=True)
+            if test_nvidia_generate:
+                from standalone_log import save_screenshot
+                save_screenshot(ROOT/'data/reports/nvidia-generation.png',hello_imgui.final_app_window_screenshot())
+                (ROOT/'data/reports/nvidia-generation-ui.json').write_text(json.dumps({'state':job['state'],'outputs':job['outputs'],'engine':document['diarization']['engine'],'device':document['diarization']['device'],'parameters':form}), 'utf-8')
             if test_speakers:
                 from standalone_log import save_screenshot
                 save_screenshot(ROOT/('data/reports/speakers-'+preferences.values['language']+'.png'),hello_imgui.final_app_window_screenshot())

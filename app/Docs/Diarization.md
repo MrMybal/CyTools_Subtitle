@@ -1,4 +1,6 @@
-# Optional speaker diarization — 0.5.0
+# Optional Community-1 speaker diarization
+
+NVIDIA Nemotron 3 is a separate optional CPU/CUDA alternative: see [NvidiaDiarization.md](NvidiaDiarization.md). This page describes Community-1.
 
 Community-1 supplies global regular and exclusive speaker timelines. Phonon remains the transcription engine. Model: `pyannote/speaker-diarization-community-1`, pinned revision `3533c8cf8e369892e6b79ff1bf80f7b0286a54ee`, CC-BY-4.0. Source: https://huggingface.co/pyannote/speaker-diarization-community-1.
 
@@ -38,7 +40,7 @@ Executed on Windows x64: the real optional runtime installer, wheel hashes, fres
 
 After the user accepted the official access conditions, the pinned Community-1 weights downloaded successfully and passed the model catalog/hash checks. Real CPU inference attributed the existing single-voice sample to one person. A 44.55-second Windows SAPI recording with two alternating English/French voices was then transcribed with Phonon-2.5 and diarized with automatic speaker count (bounds 1–4): the model returned two speakers and correctly matched all four alternating turns. The combined run took 69.34 seconds with two CPU threads on this machine. This short synthetic recording is an integration check, not a benchmark of natural dialogue, overlapping speech or difficult audio.
 
-A real MCP re-analysis of the same recording took 57.33 seconds, preserved original words and cue text/times, then completed renaming, SRT/VTT/JSON export and temporary-task cleanup. The Windows launcher rendered the installed runtime/model state. Private recordings, weights and reports are excluded from distribution. GPU, Linux/macOS, cross-recording identity, training and voiceprint exports are not integrated.
+A real MCP re-analysis of the same recording took 57.33 seconds, preserved original words and cue text/times, then completed renaming, SRT/VTT/JSON export and temporary-task cleanup. The Windows launcher rendered the installed runtime/model state. Private recordings, weights and reports are excluded from distribution. For Community-1, GPU and Linux/macOS are not integrated. Cross-recording identity, training and voiceprint exports are unavailable.
 
 
 ## Caption boundary repair — 0.5.1

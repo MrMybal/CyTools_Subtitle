@@ -3,7 +3,7 @@
   "protocolVersion": "1.0",
   "id": "cy.tools.subtitle",
   "name": "CyTools_Subtitle",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Local Phonon subtitles with word timing, bounded audio processing, media preview and MCP editing.",
   "vendor": "Cyberalien",
   "author": "Cyberalien",
@@ -105,7 +105,7 @@
             "default": 4,
             "minimum": 1,
             "maximum": 32,
-            "description": "CPU threads actually passed to Fermion."
+            "description": "Phonon/Community-1 CPU threads; NVIDIA limits its worker and inherited native process to this many logical CPUs."
           },
           "audio_stream": {
             "type": "integer",
@@ -247,19 +247,21 @@
             "default": 0,
             "minimum": 0,
             "maximum": 32,
-            "description": "Known number of voices; 0 enables automatic counting and min/max bounds."
+            "description": "Known number of voices; 0 enables automatic counting and min/max bounds. Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "min_speakers": {
             "type": "integer",
             "default": 1,
             "minimum": 1,
-            "maximum": 32
+            "maximum": 32,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "max_speakers": {
             "type": "integer",
             "default": 16,
             "minimum": 1,
-            "maximum": 32
+            "maximum": 32,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "diarization_max_seconds": {
             "type": "integer",
@@ -272,24 +274,262 @@
             "type": "integer",
             "default": 1,
             "minimum": 1,
-            "maximum": 16
+            "maximum": 16,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "embedding_batch_size": {
             "type": "integer",
             "default": 8,
             "minimum": 1,
-            "maximum": 64
+            "maximum": 64,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "speaker_labels": {
             "type": "boolean",
             "default": true,
             "description": "Include speaker display names in preview and SRT/VTT without changing cue text."
+          },
+          "diarization_engine": {
+            "type": "string",
+            "enum": [
+              "community1",
+              "nemotron3"
+            ],
+            "default": "community1",
+            "description": "Optional speaker analysis engine; Phonon remains the text/timing engine."
+          },
+          "nemotron_device": {
+            "type": "string",
+            "enum": [
+              "cpu",
+              "cuda"
+            ],
+            "default": "cpu",
+            "description": "NVIDIA analysis device. CUDA means native CUDA device 0; no silent CPU fallback."
+          },
+          "nemotron_mode": {
+            "type": "string",
+            "enum": [
+              "chunked",
+              "full"
+            ],
+            "default": "chunked",
+            "description": "Stateful chunked inference keeps global identities; full attention refuses audio over 360 seconds."
+          },
+          "nemotron_preset": {
+            "type": "string",
+            "enum": [
+              "v3-offline",
+              "v3-streaming",
+              "custom"
+            ],
+            "default": "v3-offline",
+            "description": "Quality-oriented chunked geometry, low-latency geometry, or explicit custom geometry. Full attention requires the default sentinel."
+          },
+          "nemotron_chunk": {
+            "type": "integer",
+            "default": 340,
+            "minimum": 1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_right_context": {
+            "type": "integer",
+            "default": 40,
+            "minimum": 0,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_left_context": {
+            "type": "integer",
+            "default": -1,
+            "minimum": -1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_fifo": {
+            "type": "integer",
+            "default": 40,
+            "minimum": 0,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_spkcache": {
+            "type": "integer",
+            "default": 264,
+            "minimum": 1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_update_period": {
+            "type": "integer",
+            "default": 300,
+            "minimum": 1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_onset": {
+            "type": "number",
+            "default": 0.641,
+            "minimum": 0.001,
+            "maximum": 1,
+            "description": "Native NVIDIA onset probability."
+          },
+          "nemotron_offset": {
+            "type": "number",
+            "default": 0.561,
+            "minimum": 0.001,
+            "maximum": 1,
+            "description": "Native NVIDIA offset probability."
+          },
+          "nemotron_pad_onset": {
+            "type": "number",
+            "default": 0.229,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA pad onset in seconds; zero is preserved."
+          },
+          "nemotron_pad_offset": {
+            "type": "number",
+            "default": 0.079,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA pad offset in seconds; zero is preserved."
+          },
+          "nemotron_min_duration_on": {
+            "type": "number",
+            "default": 0.511,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA min duration on in seconds; zero is preserved."
+          },
+          "nemotron_min_duration_off": {
+            "type": "number",
+            "default": 0.296,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA min duration off in seconds; zero is preserved."
           }
         },
         "required": [
           "media"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "diarization_engine": {
+                  "const": "nemotron3"
+                }
+              },
+              "required": [
+                "diarization_engine"
+              ]
+            },
+            "then": {
+              "properties": {
+                "speaker_count": {
+                  "const": 0
+                },
+                "min_speakers": {
+                  "const": 1
+                },
+                "max_speakers": {
+                  "const": 16
+                },
+                "segmentation_batch_size": {
+                  "const": 1
+                },
+                "embedding_batch_size": {
+                  "const": 8
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "diarization_engine": {
+                  "const": "nemotron3"
+                },
+                "nemotron_mode": {
+                  "const": "full"
+                }
+              },
+              "required": [
+                "diarization_engine",
+                "nemotron_mode"
+              ]
+            },
+            "then": {
+              "properties": {
+                "nemotron_preset": {
+                  "const": "v3-offline"
+                },
+                "nemotron_chunk": {
+                  "const": 340
+                },
+                "nemotron_right_context": {
+                  "const": 40
+                },
+                "nemotron_left_context": {
+                  "const": -1
+                },
+                "nemotron_fifo": {
+                  "const": 40
+                },
+                "nemotron_spkcache": {
+                  "const": 264
+                },
+                "nemotron_update_period": {
+                  "const": 300
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "diarization_engine": {
+                  "const": "nemotron3"
+                },
+                "nemotron_preset": {
+                  "enum": [
+                    "v3-offline",
+                    "v3-streaming"
+                  ]
+                }
+              },
+              "required": [
+                "diarization_engine",
+                "nemotron_preset"
+              ]
+            },
+            "then": {
+              "properties": {
+                "nemotron_chunk": {
+                  "const": 340
+                },
+                "nemotron_right_context": {
+                  "const": 40
+                },
+                "nemotron_left_context": {
+                  "const": -1
+                },
+                "nemotron_fifo": {
+                  "const": 40
+                },
+                "nemotron_spkcache": {
+                  "const": 264
+                },
+                "nemotron_update_period": {
+                  "const": 300
+                }
+              }
+            }
+          }
+        ]
       },
       "outputSchema": {
         "type": "object",
@@ -351,7 +591,8 @@
           "architecture": "x64",
           "status": "Experimental",
           "computeBackends": [
-            "CPU"
+            "CPU",
+            "CUDA"
           ]
         },
         {
@@ -1330,7 +1571,7 @@
     {
       "id": "model_status",
       "name": "Model status",
-      "description": "Report verified installed model references, dependencies and CPU-only implementation.",
+      "description": "Report verified installed Phonon model references, dependencies and CPU transcription support.",
       "inputSchema": {
         "type": "object",
         "properties": {},
@@ -2473,7 +2714,7 @@
     {
       "id": "diarize_subtitles",
       "name": "Identify subtitle speakers",
-      "description": "Analyze voices globally with local Community-1 and attach identities to a new subtitle bundle. Raw words and sound captions are preserved.",
+      "description": "Analyze voices globally with the selected local speaker engine and attach identities to a new subtitle bundle. Raw words and sound captions are preserved.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2501,26 +2742,28 @@
             "default": 4,
             "minimum": 1,
             "maximum": 32,
-            "description": "CPU threads applied to PyTorch for speaker analysis."
+            "description": "Phonon/Community-1 CPU threads; NVIDIA limits its worker and inherited native process to this many logical CPUs."
           },
           "speaker_count": {
             "type": "integer",
             "default": 0,
             "minimum": 0,
             "maximum": 32,
-            "description": "Known number of voices; 0 enables automatic counting and min/max bounds."
+            "description": "Known number of voices; 0 enables automatic counting and min/max bounds. Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "min_speakers": {
             "type": "integer",
             "default": 1,
             "minimum": 1,
-            "maximum": 32
+            "maximum": 32,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "max_speakers": {
             "type": "integer",
             "default": 16,
             "minimum": 1,
-            "maximum": 32
+            "maximum": 32,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "diarization_max_seconds": {
             "type": "integer",
@@ -2533,13 +2776,15 @@
             "type": "integer",
             "default": 1,
             "minimum": 1,
-            "maximum": 16
+            "maximum": 16,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "embedding_batch_size": {
             "type": "integer",
             "default": 8,
             "minimum": 1,
-            "maximum": 64
+            "maximum": 64,
+            "description": " Community-1 only; retain the default sentinel for NVIDIA, which automatically handles up to eight voices."
           },
           "speaker_labels": {
             "type": "boolean",
@@ -2583,13 +2828,249 @@
             "minimum": 0.1,
             "maximum": 5,
             "description": "Split speech after a silence gap of at least this many seconds."
+          },
+          "diarization_engine": {
+            "type": "string",
+            "enum": [
+              "community1",
+              "nemotron3"
+            ],
+            "default": "community1",
+            "description": "Optional speaker analysis engine; Phonon remains the text/timing engine."
+          },
+          "nemotron_device": {
+            "type": "string",
+            "enum": [
+              "cpu",
+              "cuda"
+            ],
+            "default": "cpu",
+            "description": "NVIDIA analysis device. CUDA means native CUDA device 0; no silent CPU fallback."
+          },
+          "nemotron_mode": {
+            "type": "string",
+            "enum": [
+              "chunked",
+              "full"
+            ],
+            "default": "chunked",
+            "description": "Stateful chunked inference keeps global identities; full attention refuses audio over 360 seconds."
+          },
+          "nemotron_preset": {
+            "type": "string",
+            "enum": [
+              "v3-offline",
+              "v3-streaming",
+              "custom"
+            ],
+            "default": "v3-offline",
+            "description": "Quality-oriented chunked geometry, low-latency geometry, or explicit custom geometry. Full attention requires the default sentinel."
+          },
+          "nemotron_chunk": {
+            "type": "integer",
+            "default": 340,
+            "minimum": 1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_right_context": {
+            "type": "integer",
+            "default": 40,
+            "minimum": 0,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_left_context": {
+            "type": "integer",
+            "default": -1,
+            "minimum": -1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_fifo": {
+            "type": "integer",
+            "default": 40,
+            "minimum": 0,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_spkcache": {
+            "type": "integer",
+            "default": 264,
+            "minimum": 1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_update_period": {
+            "type": "integer",
+            "default": 300,
+            "minimum": 1,
+            "maximum": 1024,
+            "description": "Custom NVIDIA geometry in 80 ms encoder frames; only with the custom chunked preset. Otherwise keep its default."
+          },
+          "nemotron_onset": {
+            "type": "number",
+            "default": 0.641,
+            "minimum": 0.001,
+            "maximum": 1,
+            "description": "Native NVIDIA onset probability."
+          },
+          "nemotron_offset": {
+            "type": "number",
+            "default": 0.561,
+            "minimum": 0.001,
+            "maximum": 1,
+            "description": "Native NVIDIA offset probability."
+          },
+          "nemotron_pad_onset": {
+            "type": "number",
+            "default": 0.229,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA pad onset in seconds; zero is preserved."
+          },
+          "nemotron_pad_offset": {
+            "type": "number",
+            "default": 0.079,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA pad offset in seconds; zero is preserved."
+          },
+          "nemotron_min_duration_on": {
+            "type": "number",
+            "default": 0.511,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA min duration on in seconds; zero is preserved."
+          },
+          "nemotron_min_duration_off": {
+            "type": "number",
+            "default": 0.296,
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Native NVIDIA min duration off in seconds; zero is preserved."
           }
         },
         "required": [
           "media",
           "document"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "diarization_engine": {
+                  "const": "nemotron3"
+                }
+              },
+              "required": [
+                "diarization_engine"
+              ]
+            },
+            "then": {
+              "properties": {
+                "speaker_count": {
+                  "const": 0
+                },
+                "min_speakers": {
+                  "const": 1
+                },
+                "max_speakers": {
+                  "const": 16
+                },
+                "segmentation_batch_size": {
+                  "const": 1
+                },
+                "embedding_batch_size": {
+                  "const": 8
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "diarization_engine": {
+                  "const": "nemotron3"
+                },
+                "nemotron_mode": {
+                  "const": "full"
+                }
+              },
+              "required": [
+                "diarization_engine",
+                "nemotron_mode"
+              ]
+            },
+            "then": {
+              "properties": {
+                "nemotron_preset": {
+                  "const": "v3-offline"
+                },
+                "nemotron_chunk": {
+                  "const": 340
+                },
+                "nemotron_right_context": {
+                  "const": 40
+                },
+                "nemotron_left_context": {
+                  "const": -1
+                },
+                "nemotron_fifo": {
+                  "const": 40
+                },
+                "nemotron_spkcache": {
+                  "const": 264
+                },
+                "nemotron_update_period": {
+                  "const": 300
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "diarization_engine": {
+                  "const": "nemotron3"
+                },
+                "nemotron_preset": {
+                  "enum": [
+                    "v3-offline",
+                    "v3-streaming"
+                  ]
+                }
+              },
+              "required": [
+                "diarization_engine",
+                "nemotron_preset"
+              ]
+            },
+            "then": {
+              "properties": {
+                "nemotron_chunk": {
+                  "const": 340
+                },
+                "nemotron_right_context": {
+                  "const": 40
+                },
+                "nemotron_left_context": {
+                  "const": -1
+                },
+                "nemotron_fifo": {
+                  "const": 40
+                },
+                "nemotron_spkcache": {
+                  "const": 264
+                },
+                "nemotron_update_period": {
+                  "const": 300
+                }
+              }
+            }
+          }
+        ]
       },
       "outputSchema": {
         "type": "object",
@@ -2647,7 +3128,8 @@
           "architecture": "x64",
           "status": "Experimental",
           "computeBackends": [
-            "CPU"
+            "CPU",
+            "CUDA"
           ]
         },
         {
@@ -2826,6 +3308,535 @@
           "description": "cytools-subtitles v1; words, cues, source stream metadata and warnings."
         }
       ],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "nemotron_status",
+      "name": "NVIDIA speaker engine status",
+      "description": "Local native CPU/CUDA runtime and model presence, without neural or UI imports.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "quantization": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "runtimeVersion": {
+            "type": "string"
+          },
+          "cpuReady": {
+            "type": "boolean"
+          },
+          "cudaReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "cpuRuntimePath": {
+            "type": "string"
+          },
+          "cudaRuntimePath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "quantization",
+          "license",
+          "source",
+          "runtimeVersion",
+          "cpuReady",
+          "cudaReady",
+          "modelReady",
+          "ready",
+          "modelPath",
+          "cpuRuntimePath",
+          "cudaRuntimePath",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 1073741824,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU",
+            "CUDA"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": []
+    },
+    {
+      "id": "nemotron_diagnostics",
+      "name": "NVIDIA compute diagnostics",
+      "description": "Probe the selected native runtime and report actual device and driver compatibility.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "backend": {
+            "type": "string",
+            "enum": [
+              "cpu",
+              "cuda"
+            ],
+            "default": "cpu"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "cudaAvailable": {
+            "type": "boolean"
+          },
+          "devices": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "cudaAvailable",
+          "devices",
+          "warnings"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 1073741824,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU",
+            "CUDA"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "install_nemotron_runtime",
+      "name": "Install NVIDIA native runtime",
+      "description": "Install a separately downloaded, pinned, hashed Windows CPU or CUDA runtime into an isolated verified candidate.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "license_accepted": {
+            "type": "boolean",
+            "default": false,
+            "description": "Explicit user review/acceptance of the applicable OpenMDW or Apache/component license; never inferred."
+          },
+          "repair": {
+            "type": "boolean",
+            "default": false
+          },
+          "backend": {
+            "type": "string",
+            "enum": [
+              "cpu",
+              "cuda"
+            ],
+            "default": "cpu"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "quantization": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "runtimeVersion": {
+            "type": "string"
+          },
+          "cpuReady": {
+            "type": "boolean"
+          },
+          "cudaReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "cpuRuntimePath": {
+            "type": "string"
+          },
+          "cudaRuntimePath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "quantization",
+          "license",
+          "source",
+          "runtimeVersion",
+          "cpuReady",
+          "cudaReady",
+          "modelReady",
+          "ready",
+          "modelPath",
+          "cpuRuntimePath",
+          "cudaRuntimePath",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 1073741824,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [
+        "network"
+      ],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU",
+            "CUDA"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "install_nemotron_model",
+      "name": "Install NVIDIA Nemotron 3 model",
+      "description": "Separately download the official pinned Q8_0 GGUF; preserve prior models and reject installation without explicit license acceptance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "license_accepted": {
+            "type": "boolean",
+            "default": false,
+            "description": "Explicit user review/acceptance of the applicable OpenMDW or Apache/component license; never inferred."
+          },
+          "repair": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "quantization": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "runtimeVersion": {
+            "type": "string"
+          },
+          "cpuReady": {
+            "type": "boolean"
+          },
+          "cudaReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "cpuRuntimePath": {
+            "type": "string"
+          },
+          "cudaRuntimePath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "quantization",
+          "license",
+          "source",
+          "runtimeVersion",
+          "cpuReady",
+          "cudaReady",
+          "modelReady",
+          "ready",
+          "modelPath",
+          "cpuRuntimePath",
+          "cudaRuntimePath",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 1073741824,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [
+        "network"
+      ],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU",
+            "CUDA"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "register_nemotron_model",
+      "name": "Register local NVIDIA model",
+      "description": "Reference the official compatible GGUF in place after verifying its exact size/hash; no move or network.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Local official GGUF file, referenced in place; not a task input."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "quantization": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "runtimeVersion": {
+            "type": "string"
+          },
+          "cpuReady": {
+            "type": "boolean"
+          },
+          "cudaReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "cpuRuntimePath": {
+            "type": "string"
+          },
+          "cudaRuntimePath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "quantization",
+          "license",
+          "source",
+          "runtimeVersion",
+          "cpuReady",
+          "cudaReady",
+          "modelReady",
+          "ready",
+          "modelPath",
+          "cpuRuntimePath",
+          "cudaRuntimePath",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 1073741824,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU",
+            "CUDA"
+          ]
+        }
+      ],
+      "outputs": [],
       "exclusiveGroups": [
         "speaker-diarization"
       ]

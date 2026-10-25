@@ -7485,7 +7485,7 @@
   },
   "Custom": {
     "en": "Custom",
-    "fr": "Personnalise"
+    "fr": "Personnalisé"
   },
   "Pret a generer": {
     "en": "Ready to generate",
@@ -9114,5 +9114,197 @@
   "Accept the Community-1 model conditions on Hugging Face, then retry with your read token.": {
     "en": "Accept the Community-1 model conditions on Hugging Face, then retry with your read token.",
     "fr": "Acceptez les conditions du modèle Community-1 sur Hugging Face, puis réessayez avec votre jeton de lecture."
+  },
+  "Activation threshold": {
+    "en": "Activation threshold",
+    "fr": "Seuil d’activation"
+  },
+  "CUDA is used only when selected and compatible. No system driver or Phonon library is changed.": {
+    "en": "CUDA is used only when selected and compatible. No system driver or Phonon library is changed.",
+    "fr": "CUDA est utilisé s’il est sélectionné et compatible. Le pilote système et les bibliothèques Phonon ne sont pas modifiés."
+  },
+  "Cache update frames": {
+    "en": "Cache update frames",
+    "fr": "Images par mise à jour du cache"
+  },
+  "Captions without a speaker": {
+    "en": "captions without a speaker",
+    "fr": "sous-titres sans locuteur"
+  },
+  "Changing speaker models creates new anonymous identities. Manual assignments require explicit replacement.": {
+    "en": "Changing speaker models creates new anonymous identities. Manual assignments require explicit replacement.",
+    "fr": "Un changement de modèle crée de nouvelles identités anonymes. Le remplacement des attributions manuelles doit être explicite."
+  },
+  "Changing speaker models requires explicit replacement of manual speaker assignments; their identities cannot be assumed equivalent": {
+    "en": "Changing speaker models requires explicit replacement of manual speaker assignments; their identities cannot be assumed equivalent",
+    "fr": "Le changement de modèle exige le remplacement explicite des attributions manuelles : leurs identités ne sont pas nécessairement équivalentes"
+  },
+  "Check NVIDIA compute": {
+    "en": "Check NVIDIA compute",
+    "fr": "Vérifier le calcul NVIDIA"
+  },
+  "Chunk frames": {
+    "en": "Chunk frames",
+    "fr": "Images par segment"
+  },
+  "Chunked with global voices": {
+    "en": "Chunked with global voices",
+    "fr": "Segments avec voix globales"
+  },
+  "Community-1 (CPU)": {
+    "en": "Community-1 (CPU)",
+    "fr": "Community-1 (CPU)"
+  },
+  "Custom geometry uses 80 ms frames. Invalid combinations are refused by the native engine.": {
+    "en": "Custom geometry uses 80 ms frames. Invalid combinations are refused by the native engine.",
+    "fr": "La géométrie personnalisée utilise des images de 80 ms. Le moteur natif refuse les combinaisons invalides."
+  },
+  "Deactivation threshold": {
+    "en": "Deactivation threshold",
+    "fr": "Seuil de désactivation"
+  },
+  "Download / repair NVIDIA model": {
+    "en": "Download / repair NVIDIA model",
+    "fr": "Télécharger / réparer le modèle NVIDIA"
+  },
+  "End padding (seconds)": {
+    "en": "End padding (seconds)",
+    "fr": "Marge à la fin (secondes)"
+  },
+  "FIFO frames": {
+    "en": "FIFO frames",
+    "fr": "Images FIFO"
+  },
+  "Full attention (up to 6 minutes)": {
+    "en": "Full attention (up to 6 minutes)",
+    "fr": "Attention complète (6 minutes maximum)"
+  },
+  "Full attention is limited to 360 seconds; use chunked NVIDIA analysis": {
+    "en": "Full attention is limited to 360 seconds; use chunked NVIDIA analysis",
+    "fr": "L’attention complète est limitée à 360 secondes ; utilisez l’analyse NVIDIA par segments"
+  },
+  "I reviewed and accept the NVIDIA model/runtime licenses": {
+    "en": "I reviewed and accept the NVIDIA model/runtime licenses",
+    "fr": "J’ai consulté et j’accepte les licences du modèle et du moteur NVIDIA"
+  },
+  "Install / repair NVIDIA runtime": {
+    "en": "Install / repair NVIDIA runtime",
+    "fr": "Installer / réparer le moteur NVIDIA"
+  },
+  "Install or register the NVIDIA GGUF from Installation": {
+    "en": "Install or register the NVIDIA GGUF from Installation",
+    "fr": "Installez ou référencez le GGUF NVIDIA depuis Installation"
+  },
+  "Install the selected NVIDIA runtime from Installation": {
+    "en": "Install the selected NVIDIA runtime from Installation",
+    "fr": "Installez le moteur NVIDIA sélectionné depuis Installation"
+  },
+  "Install the selected speaker engine and model in Installation first.": {
+    "en": "Install the selected speaker engine and model in Installation first.",
+    "fr": "Installez d’abord le moteur de voix sélectionné et son modèle dans Installation."
+  },
+  "Left context frames (-1 = default)": {
+    "en": "Left context frames (-1 = default)",
+    "fr": "Images de contexte à gauche (-1 = défaut)"
+  },
+  "Local NVIDIA GGUF": {
+    "en": "Local NVIDIA GGUF",
+    "fr": "GGUF NVIDIA local"
+  },
+  "Low latency": {
+    "en": "Low latency",
+    "fr": "Faible latence"
+  },
+  "Merge silence gaps below (seconds)": {
+    "en": "Merge silence gaps below (seconds)",
+    "fr": "Fusionner les silences plus courts que (secondes)"
+  },
+  "Minimum speech segment (seconds)": {
+    "en": "Minimum speech segment (seconds)",
+    "fr": "Durée minimale de parole (secondes)"
+  },
+  "Model file": {
+    "en": "Model file",
+    "fr": "Fichier du modèle"
+  },
+  "NVIDIA analysis mode": {
+    "en": "NVIDIA analysis mode",
+    "fr": "Mode d’analyse NVIDIA"
+  },
+  "NVIDIA chunk preset": {
+    "en": "NVIDIA chunk preset",
+    "fr": "Préréglage des segments NVIDIA"
+  },
+  "NVIDIA compute": {
+    "en": "NVIDIA compute",
+    "fr": "Calcul NVIDIA"
+  },
+  "NVIDIA estimates up to eight voices automatically. Phonon supplies the words and timestamps.": {
+    "en": "NVIDIA estimates up to eight voices automatically. Phonon supplies the words and timestamps.",
+    "fr": "NVIDIA estime automatiquement jusqu’à huit voix. Phonon fournit les mots et leurs horodatages."
+  },
+  "NVIDIA model and license": {
+    "en": "NVIDIA model and license",
+    "fr": "Modèle NVIDIA et licence"
+  },
+  "NVIDIA runtime license": {
+    "en": "NVIDIA runtime license",
+    "fr": "Licence du moteur NVIDIA"
+  },
+  "NVIDIA segmentation and custom chunks": {
+    "en": "NVIDIA segmentation and custom chunks",
+    "fr": "Segmentation et segments NVIDIA personnalisés"
+  },
+  "Optional native engine. Model: about 107 MB; CPU runtime: 6 MB; CUDA runtime: 102 MB. Downloads are separate.": {
+    "en": "Optional native engine. Model: about 107 MB; CPU runtime: 6 MB; CUDA runtime: 102 MB. Downloads are separate.",
+    "fr": "Moteur natif facultatif. Modèle : environ 107 Mo ; moteur CPU : 6 Mo ; moteur CUDA : 102 Mo. Téléchargements séparés."
+  },
+  "Quality": {
+    "en": "Quality",
+    "fr": "Qualité"
+  },
+  "Refresh NVIDIA installation": {
+    "en": "Refresh NVIDIA installation",
+    "fr": "Actualiser l’installation NVIDIA"
+  },
+  "Register NVIDIA GGUF": {
+    "en": "Register NVIDIA GGUF",
+    "fr": "Référencer le GGUF NVIDIA"
+  },
+  "Review the NVIDIA model/runtime license in Installation and explicitly accept it": {
+    "en": "Review the NVIDIA model/runtime license in Installation and explicitly accept it",
+    "fr": "Consultez la licence du modèle et du moteur NVIDIA dans Installation, puis acceptez-la explicitement"
+  },
+  "Right context frames": {
+    "en": "Right context frames",
+    "fr": "Images de contexte à droite"
+  },
+  "Runtime to install": {
+    "en": "Runtime to install",
+    "fr": "Moteur à installer"
+  },
+  "Speaker analysis": {
+    "en": "Speaker analysis",
+    "fr": "Analyse des voix"
+  },
+  "Speaker cache frames": {
+    "en": "Speaker cache frames",
+    "fr": "Images du cache des voix"
+  },
+  "Speaker engine": {
+    "en": "Speaker engine",
+    "fr": "Moteur d’identification des voix"
+  },
+  "Speaker identification · NVIDIA Nemotron 3": {
+    "en": "Speaker identification · NVIDIA Nemotron 3",
+    "fr": "Identification des voix · NVIDIA Nemotron 3"
+  },
+  "Start padding (seconds)": {
+    "en": "Start padding (seconds)",
+    "fr": "Marge au début (secondes)"
+  },
+  "Transcription": {
+    "en": "Transcription",
+    "fr": "Transcription"
   }
 }

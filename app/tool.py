@@ -13,6 +13,7 @@ from cytools_core.workers import ProcessWorker
 import subtitles
 import runtime_components
 import diarization
+import nemotron
 import speakers
 
 APP=Path(__file__).resolve().parent
@@ -130,10 +131,20 @@ def create_runtime(data_dir, **options):
             return doc
 
     def diarization_options(p):
+        if p.get('diarization_engine')=='nemotron3':
+            try:return nemotron.options(p)
+            except ValueError as exc:raise CyToolError('InvalidParameters',str(exc)) from exc
         if not p['speaker_count'] and p['min_speakers']>p['max_speakers']:raise CyToolError('InvalidParameters','Minimum speakers must not exceed maximum speakers')
         return {'threads':p['threads'],'num_speakers':p['speaker_count'],'min_speakers':p['min_speakers'],'max_speakers':p['max_speakers'],'max_seconds':p['diarization_max_seconds'],'segmentation_batch_size':p['segmentation_batch_size'],'embedding_batch_size':p['embedding_batch_size']}
 
-    def require_diarization(ctx):
+    def require_diarization(ctx,p):
+        if p.get('diarization_engine')=='nemotron3':
+            info=nemotron.status(ROOT);device=p['nemotron_device']
+            if not info[device+'Ready']:raise CyToolError('MissingDependency','Install the selected NVIDIA runtime from Installation',recoverable=True)
+            if not info['modelReady']:raise CyToolError('ModelNotInstalled','Install or register the NVIDIA GGUF from Installation',recoverable=True)
+            try:nemotron.verify_model(info['modelPath'],ctx.cancellation)
+            except (OSError,ValueError) as exc:raise CyToolError('InvalidModel',str(exc)) from exc
+            return
         info=diarization.status(ROOT)
         if not info['runtimeReady']:raise CyToolError('MissingDependency','Install the optional diarization runtime from Installation',recoverable=True)
         if not info['modelReady']:raise CyToolError('ModelNotInstalled','Install or register Community-1 from Installation',recoverable=True)
@@ -142,16 +153,24 @@ def create_runtime(data_dir, **options):
         except (OSError,ValueError,KeyError) as exc:raise CyToolError('InvalidModel',str(exc),recoverable=True) from exc
 
     def analyze_speakers(ctx,audio,p,media_hash):
+        if p.get('diarization_engine')=='nemotron3':
+            ctx.progress(95,currentStep='Identifying speakers with NVIDIA Nemotron 3 ('+p['nemotron_device']+')')
+            scratch=ctx.path('intermediates/nemotron.json')
+            try:
+                result=worker(ctx,{'task':'nemotron_infer','root':str(ROOT),'audio':str(audio),'scratch':str(scratch),'options':diarization_options(p)},7200,script='diarization_worker.py')
+                result['mediaSha256']=media_hash
+                return result
+            finally:scratch.unlink(missing_ok=True)
         ctx.progress(95,currentStep='Identifying speakers with Community-1 (CPU)')
         scratch=ctx.path('intermediates/diarization.float32')
         try:
             result=worker(ctx,{'task':'infer','root':str(ROOT),'audio':str(audio),'scratch':str(scratch),'options':diarization_options(p)},7200,script='diarization_worker.py')
-            result['mediaSha256']=media_hash
+            result['mediaSha256']=media_hash;result['engine']='community1'
             return result
         finally:scratch.unlink(missing_ok=True)
 
     def transcribe(ctx,p):
-        if p["diarization"]:diarization_options(p);require_diarization(ctx)
+        if p["diarization"]:diarization_options(p);require_diarization(ctx,p)
         path=source(ctx,p,"media")
         model_path=p["local_model"] or model_records().get(p["model"],{}).get("path","")
         if not model_path or not Path(model_path).is_dir():
@@ -162,6 +181,7 @@ def create_runtime(data_dir, **options):
         except (OSError,ValueError) as exc:raise CyToolError("InvalidModel",str(exc),recoverable=True) from exc
         meta=worker(ctx,{"task":"probe","source":str(path)})
         duration=meta["durationSeconds"]
+        if p.get('diarization_engine')=='nemotron3' and p['diarization'] and p['nemotron_mode']=='full' and duration>360:raise CyToolError('DurationLimit','Full attention is limited to 360 seconds; use chunked NVIDIA analysis')
         if p["diarization"] and duration>p["diarization_max_seconds"]:raise CyToolError("DurationLimit","Audio exceeds the configured diarization duration limit")
         if not 0<duration<=86400: raise CyToolError("InvalidMedia","Media duration must be known and between 0 and 24 hours")
         audio=ctx.path("intermediates/audio.wav")
@@ -361,8 +381,9 @@ def create_runtime(data_dir, **options):
         return diarization.status(ROOT)
 
     def diarize_subtitles(ctx,p):
-        options=diarization_options(p);require_diarization(ctx)
+        options=diarization_options(p);require_diarization(ctx,p)
         doc=document(ctx,p);path=source(ctx,p,'media');meta=worker(ctx,{'task':'probe','source':str(path)})
+        if p.get('diarization_engine')=='nemotron3' and p['nemotron_mode']=='full' and meta['durationSeconds']>360:raise CyToolError('DurationLimit','Full attention is limited to 360 seconds; use chunked NVIDIA analysis')
         if meta['durationSeconds']>options['max_seconds']:raise CyToolError('DurationLimit','Audio exceeds the configured diarization duration limit')
         original_duration=doc.get('media',{}).get('durationSeconds')
         if original_duration and abs(original_duration-meta['durationSeconds'])>1:raise CyToolError('MediaMismatch','Selected media duration does not match this subtitle document')
@@ -373,10 +394,39 @@ def create_runtime(data_dir, **options):
         try:
             worker(ctx,{'task':'extract','source':str(path),'destination':str(audio),'audio_stream':p['audio_stream'],'filter':'none'},3600)
             analysis=analyze_speakers(ctx,audio,p,source_hash)
-            doc=speakers.attach(doc,analysis,rebuild=p['rebuild'],layout_options={k:p[k] for k in ('max_chars','max_lines','max_duration','pause')},replace_manual=p['replace_manual'])
+            try:doc=speakers.attach(doc,analysis,rebuild=p['rebuild'],layout_options={k:p[k] for k in ('max_chars','max_lines','max_duration','pause')},replace_manual=p['replace_manual'])
+            except ValueError as exc:raise CyToolError('InvalidSpeakerAnalysis',str(exc),recoverable=True) from exc
             doc['speakerLabels']=p['speaker_labels']
             return publish(ctx,doc)
         finally:audio.unlink(missing_ok=True)
+
+    def nemotron_status(ctx,p):return nemotron.status(ROOT)
+
+    def nemotron_diagnostics(ctx,p):return worker(ctx,{'task':'nemotron_probe','root':str(ROOT),'backend':p['backend']},30,script='diarization_worker.py')
+
+    def install_nvidia(ctx,p,kind):
+        if not p['license_accepted']:raise CyToolError('LicenseAcceptanceRequired','Review the NVIDIA model/runtime license in Installation and explicitly accept it',recoverable=True)
+        info=nemotron.status(ROOT);backend=p.get('backend','cpu')
+        if not p['repair'] and info[backend+'Ready' if kind=='runtime' else 'modelReady']:return info
+        from filelock import FileLock,Timeout
+        base=ROOT/('runtime/components/nemotron/'+backend if kind=='runtime' else 'data/models/nemotron');base.mkdir(parents=True,exist_ok=True)
+        lock=FileLock(str(base/'install.lock'))
+        while True:
+            ctx.cancellation.check()
+            try:lock.acquire(timeout=0);break
+            except Timeout:ctx.cancellation.sleep(.1)
+        try:
+            return worker(ctx,{'task':'nemotron_'+kind,'root':str(ROOT),'backend':backend,'license_accepted':p['license_accepted']},1800,script='diarization_worker.py')
+        finally:lock.release()
+
+    def install_nemotron_runtime(ctx,p):return install_nvidia(ctx,p,'runtime')
+    def install_nemotron_model(ctx,p):return install_nvidia(ctx,p,'model')
+
+    def register_nemotron_model(ctx,p):
+        try:value=nemotron.verify_model(p['path'],ctx.cancellation)
+        except (OSError,ValueError) as exc:raise CyToolError('InvalidModel',str(exc)) from exc
+        nemotron.atomic(ROOT/'data/settings/nemotron.json',value)
+        return nemotron.status(ROOT)
 
     def rename_speakers(ctx,p):
         try:return publish(ctx,speakers.rename(document(ctx,p),p['names'],p['show_labels']))
@@ -390,11 +440,14 @@ def create_runtime(data_dir, **options):
             if not candidate.is_absolute(): candidate=ROOT/"data/inputs"/candidate
             try: size=candidate.stat().st_size
             except OSError: pass
-        return {"ramBytes":(6 if p.get("diarization") else 4)*1024**3,"diskBytes":size*2+(5 if p.get("diarization") else 3)*1024**3,"cpuThreads":p.get("threads",4)}
+        result={"ramBytes":(6 if p.get("diarization") else 4)*1024**3,"diskBytes":size*2+(5 if p.get("diarization") else 3)*1024**3,"cpuThreads":p.get("threads",4)}
+        if p.get('diarization') and p.get('diarization_engine')=='nemotron3' and p.get('nemotron_device')=='cuda':result['vramBytes']={'0':(6 if p.get('nemotron_mode')=='full' or p.get('nemotron_preset')=='custom' else 2)*1024**3}
+        return result
 
     def estimate_diarization(p,backend,model):
         resources=estimate(p,backend,model)
         resources['ramBytes']=6*1024**3;resources['diskBytes']+=2*1024**3
+        if p.get('diarization_engine')=='nemotron3' and p.get('nemotron_device')=='cuda':resources['vramBytes']={'0':(6 if p.get('nemotron_mode')=='full' or p.get('nemotron_preset')=='custom' else 2)*1024**3}
         return resources
 
     def estimate_input(p,backend,model):
@@ -404,7 +457,7 @@ def create_runtime(data_dir, **options):
         except OSError:size=0
         return {"ramBytes":512*1024**2,"diskBytes":size*2+128*1024**2,"cpuThreads":1}
 
-    for name,handler in (("transcribe",transcribe),("inspect_media",inspect_media),("read_subtitles",read_subtitles),("edit_subtitles",edit_subtitles),("reflow_subtitles",reflow_subtitles),("repair_subtitles",repair_subtitles),("model_status",status),("install_model",install),("register_local_model",register_local),("runtime_status",runtime_status),("install_runtime",install_runtime),("diarization_status",diarization_status),("check_diarization_access",check_diarization_access),("install_diarization_runtime",install_diarization_runtime),("install_diarization_model",install_diarization_model),("register_diarization_model",register_diarization_model),("diarize_subtitles",diarize_subtitles),("rename_speakers",rename_speakers)):
+    for name,handler in (("transcribe",transcribe),("inspect_media",inspect_media),("read_subtitles",read_subtitles),("edit_subtitles",edit_subtitles),("reflow_subtitles",reflow_subtitles),("repair_subtitles",repair_subtitles),("model_status",status),("install_model",install),("register_local_model",register_local),("runtime_status",runtime_status),("install_runtime",install_runtime),("diarization_status",diarization_status),("check_diarization_access",check_diarization_access),("install_diarization_runtime",install_diarization_runtime),("install_diarization_model",install_diarization_model),("register_diarization_model",register_diarization_model),("diarize_subtitles",diarize_subtitles),("rename_speakers",rename_speakers),("nemotron_status",nemotron_status),("nemotron_diagnostics",nemotron_diagnostics),("install_nemotron_runtime",install_nemotron_runtime),("install_nemotron_model",install_nemotron_model),("register_nemotron_model",register_nemotron_model)):
         runtime.register(name,handler,**({"estimate":estimate_diarization} if name=="diarize_subtitles" else {"estimate":estimate} if name=="transcribe" else {"estimate":estimate_input} if name in ("inspect_media","read_subtitles","edit_subtitles","reflow_subtitles","repair_subtitles","rename_speakers") else {}))
     return runtime
 

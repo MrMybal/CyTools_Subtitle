@@ -9,6 +9,12 @@ os.environ["HF_HUB_DISABLE_TELEMETRY"]="1"
 
 
 def main(p):
+    if p['task'].startswith('nemotron_'):
+        import nemotron
+        if p['task']=='nemotron_runtime':return nemotron.install_runtime(p['root'],p['backend'],p.get('license_accepted',False))
+        if p['task']=='nemotron_model':return nemotron.install_model(p['root'],p.get('license_accepted',False))
+        if p['task']=='nemotron_probe':return nemotron.probe(p['root'],p['backend'])
+        if p['task']=='nemotron_infer':return nemotron.infer(p['root'],p['audio'],p['options'],p['scratch'])
     if p["task"]=="access":return diarization.access()
     if p["task"]=="install_model":return diarization.install_model(p["root"],p["destination"])
     if p["task"]=="install_runtime":return diarization.install_runtime(p["root"],p["destination"])
