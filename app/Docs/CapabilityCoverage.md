@@ -50,9 +50,9 @@ Native inventory: pyannote.audio 4.0.7 `Pipeline.from_pretrained` and `SpeakerDi
 
 | Native capability | Tool operation / fields | Standalone | Validation |
 |---|---|---|---|
-| Global speaker and exclusive timelines | transcribe.diarization, diarize_subtitles | Generation toggle / Speakers | Controller, attribution and preservation tests; real weight access gated |
+| Global speaker and exclusive timelines | transcribe.diarization, diarize_subtitles | Generation toggle / Speakers | Real CPU inference: one voice and four alternating turns with two synthetic voices; automatic count |
 | Known count / count bounds | speaker_count, min_speakers, max_speakers | Speaker analysis settings | Schema bounds and argument construction |
-| Segmentation / embedding batches | segmentation_batch_size, embedding_batch_size | Speaker analysis settings | Passed to pipeline; full inference awaits weight access |
+| Segmentation / embedding batches | segmentation_batch_size, embedding_batch_size | Speaker analysis settings | Applied in real CPU pipeline runs |
 | CPU threads | threads | Existing threads setting | Applied to optional PyTorch worker |
 | Local checkpoint / offline inference | register_diarization_model; managed pinned model | Installation / local folder | Restricted config paths and SHA256 checks |
 | Credentials / gated download | check_diarization_access, install_diarization_model | Protected token field / official conditions link | Real gated HTTP refusal, no token in business schema |
