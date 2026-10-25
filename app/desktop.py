@@ -11,6 +11,9 @@ from preview import Player
 import subtitles
 import updates
 import runtime_components
+import cyui
+import ui_common
+from ui_common import label, preferences
 
 
 def defaults():
@@ -35,6 +38,10 @@ def main():
     test_repair='--ui-test-repair' in sys.argv
     test_preview='--ui-test-preview' in sys.argv
     test_started=time.monotonic();test_played=False
+    view='Workspace';search='';last_state=''
+    for flag,target in [('--ui-test-installation','Installation'),('--ui-test-repair','Subtitle editor'),('--ui-test-options','Options'),('--ui-test-logs','Application log'),('--ui-test-advanced','Advanced operations')]:
+        if flag in sys.argv:view=target
+    view=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-view=')),view)
     if test_preview:
         report=json.loads((ROOT/'data/reports/real-inference.json').read_text('utf-8'))
         document_path=report['outputs']['document'];document=subtitles.validate(json.loads(Path(document_path).read_text('utf-8')))
@@ -42,12 +49,15 @@ def main():
     if test_repair:
         demo={"format":"cytools-subtitles","schemaVersion":1,"media":{"durationSeconds":10,"streams":[]},"words":[],"cues":[{"id":"demo-1","start":1,"end":1.1,"text":"Hello and welcome.","kind":"speech"},{"id":"demo-2","start":1.1,"end":1.25,"text":"Please come in.","kind":"speech"}]}
         document_path=str(ROOT/'data/reports/repair-ui-input.json');Path(document_path).write_text(json.dumps(demo),'utf-8');document=demo
-    image_params=immvision.ImageParams();image_params.image_display_size=(880,330);image_params.show_options_button=False;image_params.show_image_info=False
-    image_params.show_pixel_info=False;image_params.refresh_image=True;image_params.resize_keep_aspect_ratio=True
+    image_params=immvision.ImageParams();image_params.show_options_button=False;image_params.show_image_info=False
+    image_params.show_pixel_info=False;image_params.show_zoom_buttons=False;image_params.can_resize=False;image_params.pan_with_mouse=False;image_params.zoom_with_mouse_wheel=False;image_params.refresh_image=True;image_params.resize_keep_aspect_ratio=True
     runner=hello_imgui.RunnerParams();runner.app_window_params.window_title="CyTools_Subtitle"
-    runner.app_window_params.window_geometry.size=(1180,900)
+    runner.app_window_params.window_geometry.size=(1500,960)
+    runner.imgui_window_params.default_imgui_window_type=hello_imgui.DefaultImGuiWindowType.no_default_window
+    if '--ui-test-small' in sys.argv:runner.app_window_params.window_geometry.size=(1024,768)
     (ROOT/"data/settings").mkdir(parents=True,exist_ok=True)
-    runner.ini_filename=str(ROOT/"data/settings/imgui.ini")
+    runner.ini_filename=str(ROOT/("data/reports/cyui-test.ini" if any(a.startswith(("--ui-test","--smoke-test")) for a in sys.argv) else "data/settings/imgui.ini"))
+    Path(runner.ini_filename).parent.mkdir(parents=True,exist_ok=True)
     with create_runtime(ROOT/"data/jobs") as runtime:
         actor=runtime.authenticate(runtime.create_client("ImGui",permissions=["network"])["token"])
         session=runtime.create_session(actor,temporary=False)["sessionId"]
@@ -67,8 +77,9 @@ def main():
             keys=("max_cps","min_duration","max_advance","max_delay","max_extension","min_gap","merge_fragments","max_chars","max_lines","max_duration","pause")
             submit("repair_subtitles",{"document":document_path,**{k:form[k] for k in keys}})
         def gui():
-            nonlocal job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
+            nonlocal view,search,last_state,job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
             frames+=1
+            if frames==1 and document and document["cues"]:select_cue(0)
             if test_repair and frames==3:repair_current()
             if test_repair and frames>30 and job and job["state"] in ("Completed","Failed","Cancelled"):runner.app_shall_exit=True
             if test_preview and player.frame is not None and not test_played:
@@ -81,13 +92,13 @@ def main():
                     try:
                         if dialog_kind=="media": form["media"]=chosen;player.open(chosen,form["audio_stream"])
                         elif dialog_kind=="document":
-                            document=subtitles.validate(json.loads(Path(chosen).read_text("utf-8-sig")));document_path=chosen
+                            document=subtitles.validate(json.loads(Path(chosen).read_text("utf-8-sig")));document_path=chosen;subtitle_job=None
                             if document["cues"]: select_cue(0)
                         elif dialog_kind=="export":export_folder=chosen
                     except Exception as exc:message=str(exc)
             if future and future.done():
-                try: message=json.dumps(future.result(),ensure_ascii=False,indent=2)
-                except Exception as exc:message=str(exc)
+                try: message=json.dumps(future.result(),ensure_ascii=False,indent=2);cyui.notify(tr('Completed'),'success')
+                except Exception as exc:message=str(exc);cyui.notify(str(exc),'error')
                 future=None
             if job:
                 job=runtime.get_job(actor,job["jobId"])
@@ -100,212 +111,453 @@ def main():
                     if job["operationId"]=="install_model":model_status=json.dumps(output,ensure_ascii=False)
                     if job["operationId"] in ("runtime_status","install_runtime"):
                         runtime_info=output;runtime_components.activate(ROOT)
-                        import ui_common
                         ui_common._licenses=None
             active=bool(job and job["state"] not in ("Completed","Failed","Cancelled"))
-            imgui.text("CyTools_Subtitle");imgui.same_line();imgui.text(tr("Local subtitles · Phonon · SRT / VTT"))
-            if imgui.begin_tab_bar("subtitle-tabs"):
-                opened,_=imgui.begin_tab_item("Media & generation")
-                if opened:
-                    _,form["media"]=imgui.input_text("Audio / video file",form["media"])
-                    if imgui.button("Open media"):choose("media")
+            # Keyboard actions are suppressed while typing into any field.
+            io=imgui.get_io()
+            if not io.want_text_input:
+                if io.key_ctrl and imgui.is_key_pressed(imgui.Key.o,False):choose('document' if io.key_shift else 'media')
+                if io.key_ctrl and imgui.is_key_pressed(imgui.Key.r,False) and form['media']:player.open(form['media'],form['audio_stream'])
+                if imgui.is_key_pressed(imgui.Key.left_arrow,False):player.seek(player.current_time()-2)
+                if imgui.is_key_pressed(imgui.Key.space,False):player.toggle()
+                if io.key_ctrl and imgui.is_key_pressed(imgui.Key.s,False) and document and not active:
+                    submit('edit_subtitles',{'document':document_path,'edits':[]})
+            state=job['state'] if job else 'Ready'
+            if job and state!=last_state:
+                if state in ('Completed','Failed','Cancelled'):cyui.notify(tr(state), 'success' if state=='Completed' else 'error' if state=='Failed' else 'warning')
+                last_state=state
+            cyui.begin_top_bar('###subtitle-top')
+            cyui.heading('CyTools_Subtitle',3);imgui.same_line();cyui.text_dim(tr('Local subtitles · Phonon · SRT / VTT'))
+            cyui.end_top_bar()
+            cyui.begin_status_bar('###subtitle-status')
+            cyui.status_text('accent' if active else 'success',tr(state))
+            imgui.same_line();cyui.text_faint((' · '+job['operationId']) if job else ' · CPU · '+form['model'])
+            imgui.same_line();cyui.text_faint(tr('Space: play / pause · Ctrl+O: open · Ctrl+S: save'))
+            cyui.end_status_bar()
+            cyui.begin_sidebar('###subtitle-navigation',205)
+            cyui.sidebar_header(tr('Subtitle studio'))
+            cyui.sidebar_group(tr('PROJECT'))
+            for name,glyph in [('Workspace',cyui.icon.video),('Media & generation',cyui.icon.microphone),('Subtitle editor',cyui.icon.edit)]:
+                if cyui.sidebar_item(glyph,tr(name),view==name):view=name
+            cyui.sidebar_group(tr('APPLICATION'))
+            for name,glyph in [('Installation',cyui.icon.download),('Updates',cyui.icon.refresh),('Advanced operations',cyui.icon.code),('Application log',cyui.icon.document),('Options',cyui.icon.settings)]:
+                if cyui.sidebar_item(glyph,tr(name),view==name):view=name
+            cyui.space(18);cyui.badge('CPU','neutral')
+            cyui.text_faint('SRT / WebVTT / JSON')
+            cyui.end_sidebar()
+            vp=imgui.get_main_viewport()
+            imgui.set_next_window_pos(vp.work_pos);imgui.set_next_window_size(vp.work_size)
+            flags=imgui.WindowFlags_.no_title_bar|imgui.WindowFlags_.no_move|imgui.WindowFlags_.no_resize|imgui.WindowFlags_.no_saved_settings
+            imgui.begin('###subtitle-content',flags=flags)
+            cyui.panel_header(tr(view),tr('Review speech, timing and sound descriptions.'))
+            cyui.divider()
+            if active:
+                progress=job.get('progress') or {}
+                cyui.progress_bar(float(progress.get('percent',0))/100,overlay=tr(str(progress.get('currentStep',''))))
+                if cyui.button(label('Cancel')):runtime.cancel(actor,job['jobId'])
+            if job and job.get('error'):cyui.callout('error',tr(job['error']['code'])+': '+tr(job['error']['message']))
+            if view=='Workspace':
+                cyui.begin_toolbar('##workspace-tools')
+                if cyui.icon_button(cyui.icon.folder,tr('Open media (Ctrl+O)')):choose('media')
+                imgui.same_line()
+                if cyui.icon_button(cyui.icon.document,tr('Open subtitle document (Ctrl+Shift+O)')):choose('document')
+                imgui.same_line()
+                with cyui.scoped_disabled(not document or active):
+                    if cyui.icon_button(cyui.icon.save,tr('Save current subtitle bundle (Ctrl+S)')):submit('edit_subtitles',{'document':document_path,'edits':[]})
+                imgui.same_line();cyui.toolbar_separator();imgui.same_line()
+                with cyui.scoped_disabled(not form['media']):
+                    if cyui.icon_button(cyui.icon.refresh,tr('Load preview (Ctrl+R)')):player.open(form['media'],form['audio_stream'])
+                imgui.same_line();cyui.text_dim(Path(form['media']).name if form['media'] else tr('No media selected'))
+                cyui.end_toolbar()
+                wide=imgui.get_content_region_avail().x>cyui.dp(880)
+                if wide:wide=imgui.begin_table('##workspace-columns',2,imgui.TableFlags_.resizable)
+                if wide:
+                    imgui.table_setup_column('preview',imgui.TableColumnFlags_.width_stretch,3)
+                    imgui.table_setup_column('inspector',imgui.TableColumnFlags_.width_stretch,1.2)
+                    imgui.table_next_column()
+                cyui.begin_card('##preview-card',tr('Preview'))
+                room=imgui.get_content_region_avail().x
+                height=min(cyui.dp(335),room*9/16)
+                if player.frame is not None:
+                    height=min(height,room*player.frame.shape[0]/player.frame.shape[1])
+                    width=height*player.frame.shape[1]/player.frame.shape[0]
+                    image_params.image_display_size=(max(1,int(width)),max(1,int(height)))
+                    left=imgui.get_cursor_pos_x()
+                    canvas=imgui.get_cursor_screen_pos()
+                    imgui.get_window_draw_list().add_rect_filled(canvas,(canvas.x+room,canvas.y+height),cyui.palette().bg0)
+                    imgui.set_cursor_pos_x(left+(room-width)/2)
+                    origin=imgui.get_cursor_screen_pos()
+                    immvision.image('##video',player.frame,image_params)
+                    if document:
+                        caption='\n'.join(c['text'] for c in document['cues'] if c['start']<=player.current_time()<c['end'])
+                        if caption:
+                            size=imgui.calc_text_size(caption);x=origin.x+(width-size.x)/2;y=origin.y+height-size.y-cyui.dp(18)
+                            draw=imgui.get_window_draw_list();p=cyui.palette()
+                            draw.add_rect_filled((x-cyui.dp(10),y-cyui.dp(5)),(x+size.x+cyui.dp(10),y+size.y+cyui.dp(5)),cyui.alpha(p.bg0,.94),cyui.dp(4))
+                            draw.add_text((x,y),p.text,caption)
+                    imgui.set_cursor_pos_x(left)
+                else:
+                    imgui.begin_child('##empty-preview',(0,height))
+                    cyui.empty_state(tr('Audio / video preview'),tr('Open media to review your subtitles in sync.'),cyui.icon.audio if form['media'] else cyui.icon.video)
+                    if form['media']:cyui.text_dim(Path(form['media']).name)
+                    imgui.end_child()
+                with cyui.scoped_disabled(not player.duration):
+                    if cyui.icon_button(cyui.icon.play,tr('Play / pause (Space)')):player.toggle()
                     imgui.same_line()
-                    if imgui.button("Load preview") and form["media"]:player.open(form["media"],form["audio_stream"])
-                    models=["phonon-2","phonon-2.5","phonon-2.5-en"]
-                    changed,index=imgui.combo("Model",models.index(form["model"]),models)
-                    if changed:form["model"]=models[index]
-                    imgui.text_wrapped(tr("Phonon-2: English. Phonon-2.5: multilingual including French. CPU inference; no GPU setup needed."))
-                    _,form["threads"]=imgui.slider_int("CPU threads",form["threads"],1,32)
-                    filters=["none","voice","denoise"]
-                    changed,index=imgui.combo("Audio filter",filters.index(form["filter"]),[tr("None"),tr("Voice band + denoise"),tr("Denoise")])
-                    if changed:form["filter"]=filters[index]
-                    imgui.text_wrapped(tr("Voice filtering reduces noise; it does not isolate vocals from music."))
-                    if imgui.collapsing_header("Segmentation & layout"):
-                        _,form["chunk_seconds"]=imgui.slider_float("Window seconds",form["chunk_seconds"],5,28)
-                        _,form["overlap_seconds"]=imgui.slider_float("Overlap seconds",form["overlap_seconds"],.2,4)
-                        _,form["audio_stream"]=imgui.slider_int("Audio track (zero based)",form["audio_stream"],0,31)
-                        _,form["max_chars"]=imgui.slider_int("Characters per line",form["max_chars"],10,100)
-                        _,form["max_lines"]=imgui.slider_int("Maximum lines",form["max_lines"],1,4)
-                        _,form["max_duration"]=imgui.slider_float("Maximum cue seconds",form["max_duration"],.5,20)
-                        _,form["pause"]=imgui.slider_float("Split at pause seconds",form["pause"],.1,5)
-                        _,form["auto_timing"]=imgui.checkbox("Repair timing automatically",form["auto_timing"])
-                        _,form["max_cps"]=imgui.slider_float("Reading characters per second",form["max_cps"],5,40)
-                        _,form["min_duration"]=imgui.slider_float("Minimum display seconds",form["min_duration"],.2,3)
-                        _,form["max_advance"]=imgui.slider_float("Maximum early shift seconds",form["max_advance"],0,1)
-                        _,form["max_delay"]=imgui.slider_float("Maximum onset delay seconds",form["max_delay"],0,2)
-                        _,form["max_extension"]=imgui.slider_float("Maximum end extension seconds",form["max_extension"],0,3)
-                        _,form["min_gap"]=imgui.slider_float("Minimum caption gap seconds",form["min_gap"],0,.5)
-                        _,form["merge_fragments"]=imgui.checkbox("Merge compatible fragments",form["merge_fragments"])
-                        changed,text=imgui.input_text("Hotwords (comma separated)",", ".join(form["hotwords"]))
-                        if changed:form["hotwords"]=[x.strip() for x in text.split(",") if x.strip()]
-                        _,form["hotword_lambda"]=imgui.slider_float("Hotword strength",form["hotword_lambda"],0,10)
-                        _,form["local_model"]=imgui.input_text("Optional local Phonon model folder",form["local_model"])
-                        imgui.text_wrapped(tr("Local models are referenced in place. Only compatible Phonon-2 family directories; LoRA is not supported by this engine."))
-                    imgui.begin_disabled(active)
-                    if not runtime_info["ready"]:imgui.text_wrapped(tr("PyTorch is not installed. Open Installation to download it before generating subtitles."))
-                    imgui.begin_disabled(not runtime_info["ready"])
-                    if imgui.button("Generate subtitles"):submit("transcribe",dict(form))
-                    imgui.end_disabled()
-                    imgui.same_line()
-                    if imgui.button("Inspect media"):submit("inspect_media",{"media":form["media"],"audio_stream":form["audio_stream"],"excerpt":True})
-                    imgui.end_disabled()
-                    imgui.separator()
-                    imgui.text(tr("Preview"))
-                    if imgui.button("Play / pause"):player.toggle()
-                    imgui.same_line()
-                    if imgui.button("Back 2 seconds"):player.seek(player.current_time()-2)
-                    changed,position=imgui.slider_float("Timeline (seconds)",player.current_time(),0,max(.1,player.duration),"%.3f")
+                    if cyui.icon_button(cyui.icon.back,tr('Back 2 seconds (Left arrow)')):player.seek(player.current_time()-2)
+                    imgui.same_line();imgui.set_next_item_width(max(cyui.dp(60),imgui.get_content_region_avail().x-cyui.dp(145)))
+                    changed,position=imgui.slider_float('##Timeline (seconds)',player.current_time(),0,max(.1,player.duration),'%.2f s')
                     if changed:player.seek(position)
-                    imgui.text(f"{player.current_time():.3f} / {player.duration:.3f} s")
-                    imgui.text(tr("Source pixels / preview pixels")+f": {player.width} × {player.height} / "+(f"{player.frame.shape[1]} × {player.frame.shape[0]}" if player.frame is not None else "—"))
-                    if player.frame is not None:
-                        width=min(1050,int(imgui.get_content_region_avail().x));height=min(330,int(width*player.frame.shape[0]/player.frame.shape[1]));width=int(height*player.frame.shape[1]/player.frame.shape[0])
-                        image_params.image_display_size=(width,height)
-                        image_origin=imgui.get_cursor_screen_pos()
-                        immvision.image("##video",player.frame,image_params)
-                        if document:
-                            now=player.current_time()
-                            caption="\n".join(c["text"] for c in document["cues"] if c["start"]<=now<c["end"])
-                            if caption:
-                                size=imgui.calc_text_size(caption);x=image_origin.x+(width-size.x)/2;y=image_origin.y+height-size.y-18
-                                draw=imgui.get_window_draw_list()
-                                draw.add_rect_filled((x-10,y-5),(x+size.x+10,y+size.y+5),0xD0000000,4)
-                                draw.add_text((x,y),0xFFFFFFFF,caption)
-                    if document:
-                        now=player.current_time()
-                        for cue in document["cues"]:
-                            if cue["start"]<=now<cue["end"]:imgui.text_wrapped(cue["text"])
-                    if player.error:imgui.text_wrapped(player.error)
-                    imgui.end_tab_item()
-                opened,_=imgui.begin_tab_item("Subtitle editor",flags=imgui.TabItemFlags_.set_selected if test_repair else 0)
-                if opened:
-                    if imgui.button("Open subtitle document"):choose("document")
-                    imgui.same_line()
-                    if imgui.button("Export folder"):choose("export")
-                    _,export_folder=imgui.input_text("Export destination",export_folder)
-                    imgui.begin_disabled(not subtitle_job or not export_folder)
-                    if imgui.button("Export SRT / VTT / JSON"):
-                        future=pool.submit(runtime.export_job,actor,subtitle_job["jobId"],export_folder)
+                    imgui.same_line();cyui.text_mono(f'{player.current_time():.1f} / {player.duration:.1f}')
+                cyui.text_faint(tr('Source pixels / preview pixels')+f': {player.width} × {player.height} / '+(f'{player.frame.shape[1]} × {player.frame.shape[0]}' if player.frame is not None else '—'))
+                if player.error:cyui.callout('error',player.error)
+                cyui.end_card()
+                cyui.begin_card('##cue-summary',tr('Subtitles'))
+                if document:
+                    warnings=subtitles.quality(document)
+                    cyui.badge(str(len(document['cues']))+' '+tr('Cues'),'neutral');imgui.same_line();cyui.badge(str(len(warnings))+' '+tr('Timing warnings'),'warning' if warnings else 'success')
+                    _,search=cyui.search_field('##cue-search',search,tr('Search captions'))
+                    if imgui.begin_table('##caption-table',3,imgui.TableFlags_.scroll_y|imgui.TableFlags_.row_bg|imgui.TableFlags_.borders_inner_h,(0,cyui.dp(210))):
+                        imgui.table_setup_column(tr('Time'),imgui.TableColumnFlags_.width_fixed,cyui.dp(155));imgui.table_setup_column(tr('Caption'),imgui.TableColumnFlags_.width_stretch);imgui.table_setup_column(tr('Type'),imgui.TableColumnFlags_.width_fixed,cyui.dp(70));imgui.table_headers_row()
+                        for i,cue in enumerate(document['cues']):
+                            if search.casefold() not in cue['text'].casefold():continue
+                            imgui.table_next_row();imgui.table_next_column()
+                            clicked,_=imgui.selectable(f"{cue['start']:.2f} → {cue['end']:.2f}##{cue['id']}",selected==i,imgui.SelectableFlags_.span_all_columns)
+                            if clicked:select_cue(i);player.seek(cue['start'])
+                            imgui.table_next_column();imgui.text_wrapped(cue['text']);imgui.table_next_column();cyui.text_dim(tr('Sound' if cue.get('kind')=='sound' else 'Speech'))
+                        imgui.end_table()
+                else:cyui.empty_state(tr('No subtitles yet'),tr('Generate phrase captions, then review their timing here.'),cyui.icon.document)
+                cyui.end_card()
+                if wide:imgui.table_next_column()
+                cyui.begin_card('##generation-summary',tr('Generation'))
+                if cyui.begin_properties('##quick-generation'):
+                    cyui.property(tr('Model'));models=['phonon-2','phonon-2.5','phonon-2.5-en']
+                    changed,index=imgui.combo('##quick-model',models.index(form['model']),models)
+                    if changed:form['model']=models[index]
+                    cyui.property(tr('CPU threads'));_,form['threads']=imgui.slider_int('##quick-threads',form['threads'],1,32)
+                    cyui.property(tr('Audio track (zero based)'));_,form['audio_stream']=imgui.slider_int('##quick-track',form['audio_stream'],0,31)
+                    cyui.end_properties()
+                cyui.text_dim(tr('Phrase captions with original word timings.'))
+                if not runtime_info['ready']:
+                    cyui.callout('warning',tr('PyTorch is not installed. Open Installation to download it before generating subtitles.'))
+                    if cyui.button(label('Installation')):view='Installation'
+                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media']):
+                    if cyui.primary_button(label('Generate subtitles'),size=(-1,0)):submit('transcribe',dict(form))
+                if cyui.button(label('All generation settings'),size=(-1,0)):view='Media & generation'
+                cyui.end_card()
+                cyui.begin_card('##selected-cue',tr('Selected caption'))
+                if document and document['cues']:
+                    cue=document['cues'][selected]
+                    cyui.text_mono(f"{cue['start']:.3f} → {cue['end']:.3f}")
+                    imgui.text_wrapped(cue['text'])
+                    if cyui.button(label('Edit caption and timing'),size=(-1,0)):view='Subtitle editor'
+                else:cyui.text_faint(tr('Select a caption to inspect it.'))
+                cyui.end_card()
+                if wide:imgui.end_table()
+            elif view=='Media & generation':
+                cyui.begin_card('##generation',tr('Transcription settings'))
+                if cyui.begin_properties('##media-source'):
+                    cyui.property(tr('Audio / video file'));_,form['media']=imgui.input_text('##Audio / video file',form['media'])
+                    cyui.end_properties()
+                if cyui.button(label('Open media')):choose('media')
+                imgui.same_line()
+                if cyui.button(label('Load preview')) and form['media']:player.open(form['media'],form['audio_stream']);view='Workspace'
+                models=["phonon-2","phonon-2.5","phonon-2.5-en"]
+                if cyui.begin_properties("##props-Model"):
+                    cyui.property(tr('Model'))
+                    changed,index=imgui.combo("##Model",models.index(form["model"]),models)
+                    if changed:form["model"]=models[index]
+                    cyui.end_properties()
+                imgui.text_wrapped(tr("Phonon-2: English. Phonon-2.5: multilingual including French. CPU inference; no GPU setup needed."))
+                if cyui.begin_properties("##props-CPU threads"):
+                    cyui.property(tr('CPU threads'))
+                    _,form["threads"]=imgui.slider_int("##CPU threads",form["threads"],1,32)
+                    cyui.end_properties()
+                filters=["none","voice","denoise"]
+                if cyui.begin_properties("##props-Audio filter"):
+                    cyui.property(tr('Audio filter'))
+                    changed,index=imgui.combo("##Audio filter",filters.index(form["filter"]),[tr("None"),tr("Voice band + denoise"),tr("Denoise")])
+                    if changed:form["filter"]=filters[index]
+                    cyui.end_properties()
+                imgui.text_wrapped(tr("Voice filtering reduces noise; it does not isolate vocals from music."))
+                if cyui.begin_section(label("Segmentation & layout")):
+
+                    if cyui.begin_properties("##props-Window seconds"):
+                        cyui.property(tr('Window seconds'))
+                        _,form["chunk_seconds"]=imgui.slider_float("##Window seconds",form["chunk_seconds"],5,28)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Overlap seconds"):
+                        cyui.property(tr('Overlap seconds'))
+                        _,form["overlap_seconds"]=imgui.slider_float("##Overlap seconds",form["overlap_seconds"],.2,4)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Audio track (zero based)"):
+                        cyui.property(tr('Audio track (zero based)'))
+                        _,form["audio_stream"]=imgui.slider_int("##Audio track (zero based)",form["audio_stream"],0,31)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Characters per line"):
+                        cyui.property(tr('Characters per line'))
+                        _,form["max_chars"]=imgui.slider_int("##Characters per line",form["max_chars"],10,100)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Maximum lines"):
+                        cyui.property(tr('Maximum lines'))
+                        _,form["max_lines"]=imgui.slider_int("##Maximum lines",form["max_lines"],1,4)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Maximum cue seconds"):
+                        cyui.property(tr('Maximum cue seconds'))
+                        _,form["max_duration"]=imgui.slider_float("##Maximum cue seconds",form["max_duration"],.5,20)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Split at pause seconds"):
+                        cyui.property(tr('Split at pause seconds'))
+                        _,form["pause"]=imgui.slider_float("##Split at pause seconds",form["pause"],.1,5)
+                        cyui.end_properties()
+                    cyui.end_section()
+                if cyui.begin_section(label('Reading comfort'),False):
+                    if cyui.begin_properties("##props-Repair timing automatically"):
+                        cyui.property(tr('Repair timing automatically'))
+                        _,form["auto_timing"]=imgui.checkbox("##Repair timing automatically",form["auto_timing"])
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Reading characters per second"):
+                        cyui.property(tr('Reading characters per second'))
+                        _,form["max_cps"]=imgui.slider_float("##Reading characters per second",form["max_cps"],5,40)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Minimum display seconds"):
+                        cyui.property(tr('Minimum display seconds'))
+                        _,form["min_duration"]=imgui.slider_float("##Minimum display seconds",form["min_duration"],.2,3)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Maximum early shift seconds"):
+                        cyui.property(tr('Maximum early shift seconds'))
+                        _,form["max_advance"]=imgui.slider_float("##Maximum early shift seconds",form["max_advance"],0,1)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Maximum onset delay seconds"):
+                        cyui.property(tr('Maximum onset delay seconds'))
+                        _,form["max_delay"]=imgui.slider_float("##Maximum onset delay seconds",form["max_delay"],0,2)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Maximum end extension seconds"):
+                        cyui.property(tr('Maximum end extension seconds'))
+                        _,form["max_extension"]=imgui.slider_float("##Maximum end extension seconds",form["max_extension"],0,3)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Minimum caption gap seconds"):
+                        cyui.property(tr('Minimum caption gap seconds'))
+                        _,form["min_gap"]=imgui.slider_float("##Minimum caption gap seconds",form["min_gap"],0,.5)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Merge compatible fragments"):
+                        cyui.property(tr('Merge compatible fragments'))
+                        _,form["merge_fragments"]=imgui.checkbox("##Merge compatible fragments",form["merge_fragments"])
+                        cyui.end_properties()
+                    cyui.end_section()
+                if cyui.begin_section(label('Model hints and local weights'),False):
+                    if cyui.begin_properties("##props-Hotwords (comma separated)"):
+                        cyui.property(tr('Hotwords (comma separated)'))
+                        changed,text=imgui.input_text("##Hotwords (comma separated)",", ".join(form["hotwords"]))
+                        if changed:form["hotwords"]=[x.strip() for x in text.split(",") if x.strip()]
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Hotword strength"):
+                        cyui.property(tr('Hotword strength'))
+                        _,form["hotword_lambda"]=imgui.slider_float("##Hotword strength",form["hotword_lambda"],0,10)
+                        cyui.end_properties()
+                    if cyui.begin_properties("##props-Optional local Phonon model folder"):
+                        cyui.property(tr('Optional local Phonon model folder'))
+                        _,form["local_model"]=imgui.input_text("##Optional local Phonon model folder",form["local_model"])
+                        cyui.end_properties()
+                    imgui.text_wrapped(tr("Local models are referenced in place. Only compatible Phonon-2 family directories; LoRA is not supported by this engine."))
+                    cyui.end_section()
+                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media']):
+                    if cyui.primary_button(label('Generate subtitles')):submit('transcribe',dict(form))
+                imgui.same_line()
+                with cyui.scoped_disabled(active or not form['media']):
+                    if cyui.button(label('Inspect media')):submit('inspect_media',{'media':form['media'],'audio_stream':form['audio_stream'],'excerpt':True})
+                if not runtime_info['ready']:cyui.callout('warning',tr('PyTorch is not installed. Open Installation to download it before generating subtitles.'))
+                cyui.end_card()
+            elif view=='Subtitle editor':
+                if cyui.button(label("Open subtitle document")):choose("document")
+                imgui.same_line()
+                if cyui.button(label("Export folder")):choose("export")
+                if cyui.begin_properties("##props-Export destination"):
+                    cyui.property(tr('Export destination'))
+                    _,export_folder=imgui.input_text("##Export destination",export_folder)
+                    cyui.end_properties()
+                imgui.begin_disabled(not subtitle_job or not export_folder)
+                if cyui.button(label("Export SRT / VTT / JSON")):
+                    future=pool.submit(runtime.export_job,actor,subtitle_job["jobId"],export_folder)
+                imgui.end_disabled()
+                if document:
+                    imgui.begin_disabled(active)
+                    if cyui.button(label("Save current subtitle bundle")):submit("edit_subtitles",{"document":document_path,"edits":[]})
                     imgui.end_disabled()
-                    if document:
+                    imgui.text_wrapped(document_path)
+                    imgui.text(tr("Cues / timing warnings")+f': {len(document["cues"])} / {len(subtitles.quality(document))}')
+                    if document.get("timingRepair",{}).get("state")=="Unresolved":imgui.text_wrapped(tr(document["timingRepair"]["error"]))
+                    editor_wide=imgui.get_content_region_avail().x>cyui.dp(880)
+                    if editor_wide:editor_wide=imgui.begin_table('##editor-columns',2,imgui.TableFlags_.resizable)
+                    if editor_wide:
+                        imgui.table_setup_column('captions',imgui.TableColumnFlags_.width_stretch,1.3)
+                        imgui.table_setup_column('inspector',imgui.TableColumnFlags_.width_stretch,1)
+                        imgui.table_next_column()
+                    cyui.begin_card('##editor-captions',tr('Subtitles'))
+                    if imgui.begin_child("cue-list",(0,cyui.dp(420 if editor_wide else 200))):
+                        for i,cue in enumerate(document["cues"]):
+                            clicked,_=imgui.selectable(f'{cue["start"]:.3f} -> {cue["end"]:.3f}  {cue["text"].replace(chr(10)," ")}##{cue["id"]}',selected==i)
+                            if clicked:select_cue(i);player.seek(cue["start"])
+                    imgui.end_child()
+                    cyui.end_card()
+                    if editor_wide:imgui.table_next_column()
+                    cyui.begin_card('##caption-inspector',tr('Caption inspector'))
+                    if document["cues"]:
+                        if cyui.begin_properties("##props-Start seconds"):
+                            cyui.property(tr('Start seconds'))
+                            _,cue_start=imgui.input_double("##Start seconds",cue_start,.04,.2,"%.3f")
+                            cyui.end_properties()
+                        if cyui.begin_properties("##props-End seconds"):
+                            cyui.property(tr('End seconds'))
+                            _,cue_end=imgui.input_double("##End seconds",cue_end,.04,.2,"%.3f")
+                            cyui.end_properties()
+                        if cyui.begin_properties("##props-Caption"):
+                            cyui.property(tr('Caption'))
+                            _,cue_text=imgui.input_text_multiline("##Caption",cue_text,(0,cyui.dp(90)))
+                            cyui.end_properties()
+                        if cyui.begin_properties("##props-Cue type"):
+                            cyui.property(tr('Cue type'))
+                            _,cue_kind=imgui.combo("##Cue type",cue_kind,[tr("Speech"),tr("Sound description")])
+                            cyui.end_properties()
                         imgui.begin_disabled(active)
-                        if imgui.button("Save current subtitle bundle"):submit("edit_subtitles",{"document":document_path,"edits":[]})
-                        imgui.end_disabled()
-                        imgui.text_wrapped(document_path)
-                        imgui.text(tr("Cues / timing warnings")+f': {len(document["cues"])} / {len(subtitles.quality(document))}')
-                        if document.get("timingRepair",{}).get("state")=="Unresolved":imgui.text_wrapped(tr(document["timingRepair"]["error"]))
-                        if imgui.begin_child("cue-list",(0,220)):
-                            for i,cue in enumerate(document["cues"]):
-                                clicked,_=imgui.selectable(f'{cue["start"]:.3f} -> {cue["end"]:.3f}  {cue["text"].replace(chr(10)," ")}##{cue["id"]}',selected==i)
-                                if clicked:select_cue(i);player.seek(cue["start"])
-                        imgui.end_child()
-                        if document["cues"]:
-                            _,cue_start=imgui.input_double("Start seconds",cue_start,.04,.2,"%.3f")
-                            _,cue_end=imgui.input_double("End seconds",cue_end,.04,.2,"%.3f")
-                            _,cue_text=imgui.input_text_multiline("Caption",cue_text,(0,90))
-                            _,cue_kind=imgui.combo("Cue type",cue_kind,[tr("Speech"),tr("Sound description")])
-                            imgui.begin_disabled(active)
-                            if imgui.button("Apply cue edit"):submit("edit_subtitles",{"document":document_path,"edits":[{"id":document["cues"][selected]["id"],"start":cue_start,"end":cue_end,"text":cue_text,"kind":["speech","sound"][cue_kind]}]})
-                            imgui.same_line()
-                            if imgui.button("Delete cue"):submit("edit_subtitles",{"document":document_path,"edits":[{"id":document["cues"][selected]["id"],"delete":True}]})
-                            imgui.end_disabled()
-                        _,offset=imgui.input_double("Shift entire track seconds",offset,.04,.2,"%.3f")
-                        imgui.begin_disabled(active)
-                        if imgui.button("Apply track shift"):submit("edit_subtitles",{"document":document_path,"offset_seconds":offset})
+                        if cyui.primary_button(label("Apply cue edit")):submit("edit_subtitles",{"document":document_path,"edits":[{"id":document["cues"][selected]["id"],"start":cue_start,"end":cue_end,"text":cue_text,"kind":["speech","sound"][cue_kind]}]})
                         imgui.same_line()
-                        if imgui.button("Rebuild layout from original words"):submit("reflow_subtitles",{"document":document_path,**{k:form[k] for k in ("max_chars","max_lines","max_duration","pause","auto_timing","max_cps","min_duration","max_advance","max_delay","max_extension","min_gap","merge_fragments")}})
-                        if imgui.button("Repair reading time and overlaps"):repair_current()
+                        if cyui.danger_button(label("Delete cue")):submit("edit_subtitles",{"document":document_path,"edits":[{"id":document["cues"][selected]["id"],"delete":True}]})
+                        imgui.end_disabled()
+                    if cyui.begin_section(label('Track timing'),False):
+                        if cyui.begin_properties("##props-Shift entire track seconds"):
+                            cyui.property(tr('Shift entire track seconds'))
+                            _,offset=imgui.input_double("##Shift entire track seconds",offset,.04,.2,"%.3f")
+                            cyui.end_properties()
+                        imgui.begin_disabled(active)
+                        if cyui.button(label("Apply track shift")):submit("edit_subtitles",{"document":document_path,"offset_seconds":offset})
+                        imgui.same_line()
+                        if cyui.button(label("Rebuild layout from original words")):submit("reflow_subtitles",{"document":document_path,**{k:form[k] for k in ("max_chars","max_lines","max_duration","pause","auto_timing","max_cps","min_duration","max_advance","max_delay","max_extension","min_gap","merge_fragments")}})
+                        if cyui.button(label("Repair reading time and overlaps")):repair_current()
                         imgui.end_disabled()
                         imgui.text_wrapped(tr("Repair preserves every word. Remaining fast-dialogue warnings require review within the chosen timing limits."))
-                        _,sound_text=imgui.input_text("Sound description at playhead",sound_text)
-                        _,sound_duration=imgui.slider_float("Sound caption duration",sound_duration,.1,20)
+                        cyui.end_section()
+                    if cyui.begin_section(label('Sound descriptions'),False):
+                        if cyui.begin_properties("##props-Sound description at playhead"):
+                            cyui.property(tr('Sound description at playhead'))
+                            _,sound_text=imgui.input_text("##Sound description at playhead",sound_text)
+                            cyui.end_properties()
+                        if cyui.begin_properties("##props-Sound caption duration"):
+                            cyui.property(tr('Sound caption duration'))
+                            _,sound_duration=imgui.slider_float("##Sound caption duration",sound_duration,.1,20)
+                            cyui.end_properties()
                         imgui.begin_disabled(active or not sound_text.strip())
-                        if imgui.button("Add sound description"):
+                        if cyui.button(label("Add sound description")):
                             import uuid
                             start=player.current_time();submit("edit_subtitles",{"document":document_path,"edits":[{"id":"sound-"+uuid.uuid4().hex[:12],"start":start,"end":start+sound_duration,"text":sound_text,"kind":"sound"}]})
                         imgui.end_disabled()
-                    imgui.end_tab_item()
-                opened,_=imgui.begin_tab_item("Installation",flags=imgui.TabItemFlags_.set_selected if test_installation else 0)
-                if opened:
-                    imgui.text("PyTorch CPU "+runtime_info["expectedVersion"]);imgui.same_line();imgui.text(tr(runtime_info["state"]))
-                    imgui.text_wrapped(tr("PyTorch is downloaded separately and installed privately for this Tool. CPU inference only."))
-                    if imgui.button("PyTorch license and source"):
-                        import webbrowser
-                        webbrowser.open(runtime_components.LICENSE_URL)
-                    _,runtime_accepted=imgui.checkbox("I reviewed the PyTorch license",runtime_accepted)
-                    imgui.begin_disabled(active or not runtime_accepted)
-                    if imgui.button("Download / repair PyTorch"):submit("install_runtime",{"license_accepted":runtime_accepted,"repair":True})
-                    imgui.end_disabled()
-                    imgui.begin_disabled(active)
-                    if imgui.button("Check PyTorch installation"):submit("runtime_status",{})
-                    imgui.end_disabled()
-                    imgui.separator()
-                    imgui.text_wrapped(tr("Public model weights: CC-BY-4.0. Download size about 160 MB per model; expanded installation is larger. Downloads stay private to this Tool."))
-                    if imgui.button("Official model page"):
-                        import webbrowser
-                        repo={"phonon-2":"Phonon-2","phonon-2.5":"Phonon-2.5","phonon-2.5-en":"Phonon-2.5-English"}[form["model"]]
-                        webbrowser.open("https://huggingface.co/FermionResearch/"+repo)
-                    _,accepted=imgui.checkbox("I reviewed the model license",accepted)
-                    imgui.text(tr("Selected model")+": "+form["model"])
-                    for key,value in model_records().items():imgui.text_wrapped(key+": "+value["path"])
-                    imgui.begin_disabled(active or not accepted)
-                    if imgui.button("Download / resume / repair model"):submit("install_model",{"model":form["model"],"license_accepted":accepted})
-                    imgui.end_disabled()
-                    if imgui.button("Check installation"):submit("model_status",{})
-                    _,form["local_model"]=imgui.input_text("Local model directory",form["local_model"])
-                    imgui.begin_disabled(active or not form["local_model"])
-                    if imgui.button("Register local model"):
-                        submit("register_local_model",{"path":form["local_model"],"name":Path(form["local_model"]).name,"model":form["model"]})
-                    imgui.end_disabled()
-                    for ident,record in model_records().items():
-                        if ident.startswith("local-") and imgui.button(record.get("name",ident)+"##"+ident):
-                            form["local_model"]=record["path"];form["model"]=record.get("model","phonon-2")
-                    if model_status:imgui.text_wrapped(model_status)
-                    imgui.end_tab_item()
-                opened,_=imgui.begin_tab_item("Updates")
-                if opened:
-                    imgui.text_wrapped(tr("Configure the application GitHub repository. No public repository is assumed. Engine updates require a new tested runtime; model downloads are separate."))
-                    _,github=imgui.input_text("GitHub owner/repository",github)
-                    _,automatic=imgui.checkbox("Check updates at startup",automatic)
-                    if imgui.button("Save update settings"):
-                        try:updates.write_settings({"repository":github,"automaticCheck":automatic});message=tr("Saved")
-                        except Exception as exc:message=str(exc)
-                    imgui.begin_disabled(future is not None or active)
-                    for label,action in (("Check updates",updates.check),("Download update",updates.download),("Restore previous version",updates.rollback)):
-                        if imgui.button(label):future=pool.submit(action)
-                        imgui.same_line()
-                    imgui.end_disabled();imgui.new_line()
-                    imgui.text_wrapped(tr("Updates activate on restart and preserve data. Releases contain app/ only, with a matching Tool ID and runtime ABI."))
-                    imgui.end_tab_item()
-                imgui.end_tab_bar()
-            if job:
-                imgui.separator();imgui.text(tr(job["state"])+" · "+job["operationId"])
-                progress=job.get("progress") or {};imgui.progress_bar(float(progress.get("percent",0))/100,(-1,0),tr(str(progress.get("currentStep",""))))
-                if active and imgui.button("Cancel"):runtime.cancel(actor,job["jobId"])
-                if job.get("error"):
-                    imgui.text_wrapped(tr(job["error"]["code"])+": "+tr(job["error"]["message"]))
-                if job["state"]=="Completed" and job["operationId"]=="inspect_media":
-                    imgui.input_text_multiline("Inspection result",json.dumps(job["outputs"],indent=2,ensure_ascii=False),(0,120))
-            if message:imgui.text_wrapped(message)
+                        cyui.end_section()
+                    cyui.end_card()
+                    if editor_wide:imgui.end_table()
+                else:
+                    cyui.empty_state(tr('No subtitle document'),tr('Generate subtitles or open a JSON subtitle document to start editing.'),cyui.icon.document)
+            elif view=='Installation':
+                cyui.begin_card('##installation',tr('Runtime and model installation'))
+                if cyui.begin_properties('##install-model-choice'):
+                    cyui.property(tr('Model'));models=['phonon-2','phonon-2.5','phonon-2.5-en']
+                    changed,index=imgui.combo('##install-model',models.index(form['model']),models)
+                    if changed:form['model']=models[index]
+                    cyui.end_properties()
+                imgui.text("PyTorch CPU "+runtime_info["expectedVersion"]);imgui.same_line();imgui.text(tr(runtime_info["state"]))
+                imgui.text_wrapped(tr("PyTorch is downloaded separately and installed privately for this Tool. CPU inference only."))
+                if cyui.button(label("PyTorch license and source")):
+                    import webbrowser
+                    webbrowser.open(runtime_components.LICENSE_URL)
+                if cyui.begin_properties("##props-I reviewed the PyTorch license"):
+                    cyui.property(tr('I reviewed the PyTorch license'))
+                    _,runtime_accepted=imgui.checkbox("##I reviewed the PyTorch license",runtime_accepted)
+                    cyui.end_properties()
+                imgui.begin_disabled(active or not runtime_accepted)
+                if cyui.button(label("Download / repair PyTorch")):submit("install_runtime",{"license_accepted":runtime_accepted,"repair":True})
+                imgui.end_disabled()
+                imgui.begin_disabled(active)
+                if cyui.button(label("Check PyTorch installation")):submit("runtime_status",{})
+                imgui.end_disabled()
+                imgui.separator()
+                imgui.text_wrapped(tr("Public model weights: CC-BY-4.0. Download size about 160 MB per model; expanded installation is larger. Downloads stay private to this Tool."))
+                if cyui.button(label("Official model page")):
+                    import webbrowser
+                    repo={"phonon-2":"Phonon-2","phonon-2.5":"Phonon-2.5","phonon-2.5-en":"Phonon-2.5-English"}[form["model"]]
+                    webbrowser.open("https://huggingface.co/FermionResearch/"+repo)
+                if cyui.begin_properties("##props-I reviewed the model license"):
+                    cyui.property(tr('I reviewed the model license'))
+                    _,accepted=imgui.checkbox("##I reviewed the model license",accepted)
+                    cyui.end_properties()
+                imgui.text(tr("Selected model")+": "+form["model"])
+                for key,value in model_records().items():imgui.text_wrapped(key+": "+value["path"])
+                imgui.begin_disabled(active or not accepted)
+                if cyui.button(label("Download / resume / repair model")):submit("install_model",{"model":form["model"],"license_accepted":accepted})
+                imgui.end_disabled()
+                if cyui.button(label("Check installation")):submit("model_status",{})
+                if cyui.begin_properties("##props-Local model directory"):
+                    cyui.property(tr('Local model directory'))
+                    _,form["local_model"]=imgui.input_text("##Local model directory",form["local_model"])
+                    cyui.end_properties()
+                imgui.begin_disabled(active or not form["local_model"])
+                if cyui.button(label("Register local model")):
+                    submit("register_local_model",{"path":form["local_model"],"name":Path(form["local_model"]).name,"model":form["model"]})
+                imgui.end_disabled()
+                for ident,record in model_records().items():
+                    if ident.startswith("local-") and imgui.button(record.get("name",ident)+"##"+ident):
+                        form["local_model"]=record["path"];form["model"]=record.get("model","phonon-2")
+                if model_status:imgui.text_wrapped(model_status)
+                cyui.end_card()
+            elif view=='Updates':
+                cyui.begin_card('##updates',tr('GitHub updates'))
+                imgui.text_wrapped(tr("Configure the application GitHub repository. No public repository is assumed. Engine updates require a new tested runtime; model downloads are separate."))
+                if cyui.begin_properties("##props-GitHub owner/repository"):
+                    cyui.property(tr('GitHub owner/repository'))
+                    _,github=imgui.input_text("##GitHub owner/repository",github)
+                    cyui.end_properties()
+                if cyui.begin_properties("##props-Check updates at startup"):
+                    cyui.property(tr('Check updates at startup'))
+                    _,automatic=imgui.checkbox("##Check updates at startup",automatic)
+                    cyui.end_properties()
+                if cyui.button(label("Save update settings")):
+                    try:updates.write_settings({"repository":github,"automaticCheck":automatic});message=tr("Saved")
+                    except Exception as exc:message=str(exc)
+                imgui.begin_disabled(future is not None or active)
+                for action_label,action in (("Check updates",updates.check),("Download update",updates.download),("Restore previous version",updates.rollback)):
+                    if imgui.button(action_label):future=pool.submit(action)
+                    imgui.same_line()
+                imgui.end_disabled();imgui.new_line()
+                imgui.text_wrapped(tr("Updates activate on restart and preserve data. Releases contain app/ only, with a matching Tool ID and runtime ABI."))
+                cyui.end_card()
+            elif view=='Options':ui_common.options_panel()
+            elif view=='Application log':ui_common.journal.draw_panel()
+            elif view=='Advanced operations':ui_common._advanced_panel.draw_panel()
+            if job and job['state']=='Completed' and job['operationId']=='inspect_media':
+                imgui.input_text_multiline('Inspection result',json.dumps(job['outputs'],indent=2,ensure_ascii=False),(0,cyui.dp(120)),flags=imgui.InputTextFlags_.read_only)
+            if message:
+                if cyui.begin_section(label('Last action result')):
+                    imgui.input_text_multiline('##last-action',message,(0,cyui.dp(100)),flags=imgui.InputTextFlags_.read_only);cyui.end_section()
+            imgui.end()
             if ('--smoke-test' in sys.argv or test_installation) and frames>20:runner.app_shall_exit=True
         configure_generation(runtime,lambda:{"operationId":"transcribe","parameters":dict(form)},lambda recipe:restore_form(form,recipe))
         runner.callbacks.show_gui=gui
         try:
             if automatic and github:future=pool.submit(updates.check)
-            run(runner)
+            run(runner,shell=True)
+            if any(a.startswith('--ui-test-theme=') for a in sys.argv) or '--ui-test-view' in ' '.join(sys.argv):
+                from standalone_log import save_screenshot
+                name='cyui-'+preferences.values['theme']+'-'+preferences.values['language']+'-'+view.replace(' ','-')+'-'+preferences.values['density']+'.png'
+                save_screenshot(ROOT/'data/reports'/name,hello_imgui.final_app_window_screenshot())
             if test_preview:
                 from standalone_log import save_screenshot
                 save_screenshot(ROOT/'data/reports/preview.png',hello_imgui.final_app_window_screenshot())
             if test_installation:
                 from standalone_log import save_screenshot
-                from ui_common import preferences
                 save_screenshot(ROOT/('data/reports/installation-'+preferences.values['language']+'.png'),hello_imgui.final_app_window_screenshot())
                 (ROOT/'data/reports/installation-ui.json').write_text(json.dumps(runtime_info),'utf-8')
             if test_repair:
                 assert job and job["state"]=="Completed",job
                 assert not document["warnings"],document["warnings"]
                 from standalone_log import save_screenshot
-                from ui_common import preferences
                 save_screenshot(ROOT/('data/reports/repair-'+preferences.values['language']+'.png'),hello_imgui.final_app_window_screenshot())
                 (ROOT/'data/reports/repair-ui.json').write_text(json.dumps({"state":job["state"],"cueCount":len(document["cues"]),"warnings":document["warnings"]}),'utf-8')
         finally:

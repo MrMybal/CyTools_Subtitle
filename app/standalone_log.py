@@ -15,6 +15,7 @@ LIMIT=8*1024*1024
 def save_screenshot(path,pixels):
     # Optional smoke-test capture without adding Pillow to every audio/text Tool.
     import struct,zlib
+    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
     height,width,channels=pixels.shape
     def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
     data=b''.join(b'\0'+pixels[y,:,:3].tobytes() for y in range(height))
@@ -103,32 +104,38 @@ class Journal:
             return ('[Showing last 8 MiB]\n' if size>LIMIT and not full else '')+redact(data.decode('utf-8',errors='replace'))
         except OSError as exc:return str(exc)
     def draw_tab(self):
-        from ui_common import raw,label,tr
+        from ui_common import raw,label
         ui=raw();opened,_=ui.begin_tab_item(label('Application log'),flags=ui.TabItemFlags_.set_selected if self.test else 0)
-        if not opened:return
-        try:
-            choices=sorted(set((self.root/'data/logs').glob('*.log*'))|self.files,key=str)
-            if self.selected not in choices:choices.insert(0,self.selected)
-            changed,index=ui.combo(label('Log file'),choices.index(self.selected),[str(p.relative_to(self.root)) if p.is_relative_to(self.root) else str(p) for p in choices])
-            if changed:self.selected=choices[index];self.text=self.read()
-            _,self.paused=ui.checkbox(label('Pause log refresh'),self.paused);ui.same_line()
-            if ui.button(label('Refresh log')):self.text=self.read()
-            ui.same_line()
-            if ui.button(label('Copy entire log')) and not (self.copy_thread and self.copy_thread.is_alive()):
-                selected=self.selected
-                def copy():self.copy_result=self.read(selected,full=True)
-                self.copy_thread=threading.Thread(target=copy,daemon=True);self.copy_thread.start()
-            if self.copy_result is not None:ui.set_clipboard_text(self.copy_result);self.copy_result=None
-            ui.text_wrapped(tr('Select text and press Ctrl+C. Ctrl+A selects all. Refresh pauses while selecting.'))
-            if not self.paused and not self.focus:self.text=self.read()
-            ui.input_text_multiline('##standalone-log',self.text,ui.ImVec2(-1,max(180,ui.get_content_region_avail().y-20)),flags=ui.InputTextFlags_.read_only)
-            self.focus=ui.is_item_active()
-            if self.test:
-                self.frames+=1
-                if self.frames==3:
-                    # Exercise native clipboard, restoring the user's previous value.
-                    text=self.read(full=True);old=ui.get_clipboard_text();ui.set_clipboard_text(text);assert ui.get_clipboard_text()==text;ui.set_clipboard_text(old)
-        finally:ui.end_tab_item()
+        if opened:
+            try:self.draw_panel()
+            finally:ui.end_tab_item()
+    def draw_panel(self):
+        from ui_common import raw,label,tr
+        import cyui
+        ui=raw()
+        choices=sorted(set((self.root/'data/logs').glob('*.log*'))|self.files,key=str)
+        if self.selected not in choices:choices.insert(0,self.selected)
+        changed,index=ui.combo(label('Log file'),choices.index(self.selected),[str(p.relative_to(self.root)) if p.is_relative_to(self.root) else str(p) for p in choices])
+        if changed:self.selected=choices[index];self.text=self.read()
+        _,self.paused=ui.checkbox(label('Pause log refresh'),self.paused);ui.same_line()
+        if ui.button(label('Refresh log')):self.text=self.read()
+        ui.same_line()
+        if ui.button(label('Copy entire log')) and not (self.copy_thread and self.copy_thread.is_alive()):
+            selected=self.selected
+            def copy():self.copy_result=self.read(selected,full=True)
+            self.copy_thread=threading.Thread(target=copy,daemon=True);self.copy_thread.start()
+        if self.copy_result is not None:ui.set_clipboard_text(self.copy_result);self.copy_result=None
+        ui.text_wrapped(tr('Select text and press Ctrl+C. Ctrl+A selects all. Refresh pauses while selecting.'))
+        if not self.paused and not self.focus:self.text=self.read()
+        ui.input_text_multiline('##standalone-log',self.text,ui.ImVec2(-1,max(cyui.dp(180),ui.get_content_region_avail().y-cyui.dp(20))),flags=ui.InputTextFlags_.read_only)
+        self.focus=ui.is_item_active()
+        if self.test:
+            self.frames+=1
+            if self.frames==3:
+                # Exercise native clipboard, restoring the user's previous value.
+                text=self.read(full=True);old=ui.get_clipboard_text();ui.set_clipboard_text(text);assert ui.get_clipboard_text()==text;ui.set_clipboard_text(old)
+
+
 
 _journal=None
 def install(root):

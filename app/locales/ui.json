@@ -4001,7 +4001,7 @@
   },
   "GitHub updates": {
     "en": "GitHub updates",
-    "fr": "Mises a jour GitHub"
+    "fr": "Mises à jour GitHub"
   },
   "Mode faible VRAM": {
     "en": "Low VRAM mode",
@@ -8706,5 +8706,197 @@
   "Guided PyTorch installation currently supports Windows only": {
     "en": "Guided PyTorch installation currently supports Windows only",
     "fr": "L’installation guidée de PyTorch est actuellement disponible sur Windows uniquement"
+  },
+  "Workspace": {
+    "en": "Workspace",
+    "fr": "Espace de travail"
+  },
+  "Subtitle studio": {
+    "en": "Subtitle studio",
+    "fr": "Studio de sous-titres"
+  },
+  "PROJECT": {
+    "en": "PROJECT",
+    "fr": "PROJET"
+  },
+  "APPLICATION": {
+    "en": "APPLICATION",
+    "fr": "APPLICATION"
+  },
+  "Review speech, timing and sound descriptions.": {
+    "en": "Review speech, timing and sound descriptions.",
+    "fr": "Vérifiez les paroles, le calage et les descriptions sonores."
+  },
+  "Space: play / pause · Ctrl+O: open · Ctrl+S: save": {
+    "en": "Space: play / pause · Ctrl+O: open · Ctrl+S: save",
+    "fr": "Espace : lecture / pause · Ctrl+O : ouvrir · Ctrl+S : enregistrer"
+  },
+  "Open media (Ctrl+O)": {
+    "en": "Open media (Ctrl+O)",
+    "fr": "Ouvrir un média (Ctrl+O)"
+  },
+  "Open subtitle document (file picker)": {
+    "en": "Open subtitle document (file picker)",
+    "fr": "Ouvrir un document de sous-titres (sélecteur)"
+  },
+  "Save current subtitle bundle (Ctrl+S)": {
+    "en": "Save current subtitle bundle (Ctrl+S)",
+    "fr": "Enregistrer les sous-titres (Ctrl+S)"
+  },
+  "Load preview (selected audio track)": {
+    "en": "Load preview (selected audio track)",
+    "fr": "Charger la prévisualisation (piste audio sélectionnée)"
+  },
+  "No media selected": {
+    "en": "No media selected",
+    "fr": "Aucun média sélectionné"
+  },
+  "Audio / video preview": {
+    "en": "Audio / video preview",
+    "fr": "Prévisualisation audio / vidéo"
+  },
+  "Open media to review your subtitles in sync.": {
+    "en": "Open media to review your subtitles in sync.",
+    "fr": "Ouvrez un média pour vérifier la synchronisation des sous-titres."
+  },
+  "Play / pause (Space)": {
+    "en": "Play / pause (Space)",
+    "fr": "Lecture / pause (Espace)"
+  },
+  "Back 2 seconds (click)": {
+    "en": "Back 2 seconds (click)",
+    "fr": "Reculer de 2 secondes (clic)"
+  },
+  "Subtitles": {
+    "en": "Subtitles",
+    "fr": "Sous-titres"
+  },
+  "Cues": {
+    "en": "Cues",
+    "fr": "Répliques"
+  },
+  "Timing warnings": {
+    "en": "Timing warnings",
+    "fr": "Alertes de calage"
+  },
+  "Search captions": {
+    "en": "Search captions",
+    "fr": "Rechercher dans les sous-titres"
+  },
+  "Time": {
+    "en": "Time",
+    "fr": "Temps"
+  },
+  "Type": {
+    "en": "Type",
+    "fr": "Type"
+  },
+  "Sound": {
+    "en": "Sound",
+    "fr": "Son"
+  },
+  "No subtitles yet": {
+    "en": "No subtitles yet",
+    "fr": "Aucun sous-titre pour le moment"
+  },
+  "Generate phrase captions, then review their timing here.": {
+    "en": "Generate phrase captions, then review their timing here.",
+    "fr": "Générez les sous-titres par phrase, puis vérifiez leur calage ici."
+  },
+  "Phrase captions with original word timings.": {
+    "en": "Phrase captions with original word timings.",
+    "fr": "Sous-titres par phrase avec le calage original des mots."
+  },
+  "All generation settings": {
+    "en": "All generation settings",
+    "fr": "Tous les réglages de génération"
+  },
+  "Selected caption": {
+    "en": "Selected caption",
+    "fr": "Sous-titre sélectionné"
+  },
+  "Edit caption and timing": {
+    "en": "Edit caption and timing",
+    "fr": "Modifier le texte et le calage"
+  },
+  "Select a caption to inspect it.": {
+    "en": "Select a caption to inspect it.",
+    "fr": "Sélectionnez un sous-titre pour le consulter."
+  },
+  "Transcription settings": {
+    "en": "Transcription settings",
+    "fr": "Réglages de transcription"
+  },
+  "No subtitle document": {
+    "en": "No subtitle document",
+    "fr": "Aucun document de sous-titres"
+  },
+  "Generate subtitles or open a JSON subtitle document to start editing.": {
+    "en": "Generate subtitles or open a JSON subtitle document to start editing.",
+    "fr": "Générez des sous-titres ou ouvrez un document JSON pour commencer les modifications."
+  },
+  "Caption inspector": {
+    "en": "Caption inspector",
+    "fr": "Édition du sous-titre"
+  },
+  "Track timing": {
+    "en": "Track timing",
+    "fr": "Calage de la piste"
+  },
+  "Sound descriptions": {
+    "en": "Sound descriptions",
+    "fr": "Descriptions sonores"
+  },
+  "Runtime and model installation": {
+    "en": "Runtime and model installation",
+    "fr": "Installation du moteur et des modèles"
+  },
+  "Last action result": {
+    "en": "Last action result",
+    "fr": "Résultat de la dernière action"
+  },
+  "Density": {
+    "en": "Density",
+    "fr": "Densité"
+  },
+  "Compact": {
+    "en": "Compact",
+    "fr": "Compacte"
+  },
+  "Comfortable": {
+    "en": "Comfortable",
+    "fr": "Confortable"
+  },
+  "Interface": {
+    "en": "Interface",
+    "fr": "Interface"
+  },
+  "Open subtitle document (Ctrl+Shift+O)": {
+    "en": "Open subtitle document (Ctrl+Shift+O)",
+    "fr": "Ouvrir un document de sous-titres (Ctrl+Maj+O)"
+  },
+  "Load preview (Ctrl+R)": {
+    "en": "Load preview (Ctrl+R)",
+    "fr": "Recharger la prévisualisation (Ctrl+R)"
+  },
+  "Back 2 seconds (Left arrow)": {
+    "en": "Back 2 seconds (Left arrow)",
+    "fr": "Reculer de 2 secondes (flèche gauche)"
+  },
+  "Dependency": {
+    "en": "Dependency",
+    "fr": "Dépendance"
+  },
+  "Reading comfort": {
+    "en": "Reading comfort",
+    "fr": "Confort de lecture"
+  },
+  "Model hints and local weights": {
+    "en": "Model hints and local weights",
+    "fr": "Vocabulaire et modèles locaux"
+  },
+  "Runtime unavailable": {
+    "en": "Runtime unavailable",
+    "fr": "Moteur indisponible"
   }
 }

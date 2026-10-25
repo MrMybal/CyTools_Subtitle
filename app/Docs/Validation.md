@@ -42,3 +42,12 @@ The Windows base runtime was rebuilt without Torch, SymPy, NetworkX and mpmath. 
 A real authenticated MCP session checked runtime_status, verified refusal without explicit license review, started install_runtime and cancelled after observing the pip child process. The job reached Cancelled only after that child stopped; no active component pointer was created. A subsequent real PyPI installation downloaded PyTorch 2.14.1 and its fixed private math dependencies, passed a separate CPU import check and activated the component in about 62.7 seconds on this machine. Existing model files were referenced in place. Video transcription then produced 27 words and 5 cues, followed by export and temporary-task cleanup.
 
 The automated suite now has 24 passing tests. New coverage checks missing runtime status, path confinement, authenticated network and license requirements, and preservation of the previous active installation when candidate verification fails. Downloaded component directories and caches are excluded from base packaging even after successful local tests. Guided component installation is Windows/CPython 3.11 CPU only; Linux/macOS remain unvalidated.
+
+
+## CyUI desktop — 0.4.0 (2026-10-25)
+
+The Tool integrates the author-provided CyUI Python port, with its MIT notice and source fingerprints. The local backup commit before integration is recorded in Git. The only vendor adjustments adapt draw flags and text pointer arguments to imgui-bundle 1.93.0; the upstream framework directory is unchanged.
+
+Windows GUI checks exercised all five themes and compact/comfortable density, English/French, a 1024×768 window, real video playback with subtitle overlay, cue search layout, a timing repair through the existing runtime, Options configuration save/load, selectable logs and native clipboard round trip, and complete advanced-operation access. The 24 existing Tool/timing tests passed using the delivered CPython 3.11.9 and private development test tools. No inference algorithm or operation contract changed. Legacy theme preferences and language/text-size persistence were checked.
+
+A fresh portable product without PyTorch or model weights launched through its actual EXE from another working directory. Its workspace rendered the guided missing-PyTorch state and remained usable. The private installed product retains its separately downloaded runtime and models. Linux/macOS and higher-DPI hardware were not exercised; DPI scaling uses the platform factor supplied by HelloImGui.

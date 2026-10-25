@@ -28,3 +28,5 @@ Version 0.2.1 : l’application est sous GNU Affero General Public License versi
 Version 0.2.2 : paquet Windows portable avec runtime privé inclus. Les modèles se téléchargent séparément. Les releases privées se téléchargent dans le navigateur avec un compte autorisé ; l’updater intégré nécessite actuellement une release publique.
 
 Version 0.3.0 : PyTorch, SymPy, NetworkX et mpmath ne sont plus inclus dans le ZIP de base. Installation propose leur téléchargement privé, leur vérification et leur réparation. Le lecteur et l’éditeur fonctionnent sans PyTorch. Pour migrer depuis 0.2.x, extrayez le nouveau paquet dans un dossier séparé et référencez les modèles existants sans les déplacer.
+
+Version 0.4.0 : interface CyUI avec navigation latérale, lecteur synchronisé, recherche dans les répliques et édition des timings. Cinq thèmes, deux densités et taille du texte dans Options. Anglais par défaut, français sélectionnable. PyTorch et modèles restent téléchargés séparément.

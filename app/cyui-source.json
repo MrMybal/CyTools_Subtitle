@@ -1,0 +1,13 @@
+{
+  "component": "CyUI Python port",
+  "license": "MIT",
+  "copyright": "2026 Cyberalien",
+  "sourceFile": "python/cyui.py",
+  "integration": "Vendored from the author-provided CyUI distribution.",
+  "upstreamSha256": "ac907847bd917ea9e8b9a6d38a35c040fb7909e278e77b7722cecfff2f042cdb",
+  "sha256": "a4a5d6aa12530dc5cc8df8c9573ede09bacab671f547d8772e85681be48f3c9c",
+  "modifications": [
+    "Use round_top_left | round_bottom_left for both callout and notification edges, matching imgui-bundle 1.93 enum names.",
+    "Remove C++ text_end arguments from calc_text_size and draw_list.add_text in callout; Python bindings omit those pointer arguments."
+  ]
+}

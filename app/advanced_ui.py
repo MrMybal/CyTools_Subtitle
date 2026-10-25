@@ -32,9 +32,15 @@ class Panel:
         for key in ('priority','queue','execution'):
             if key in value.get('uiState',{}).get('invocation',{}):state[key]=value['uiState']['invocation'][key]
     def draw_tab(self):
-        from ui_common import raw,label,tr,ROOT,current_recipe
+        from ui_common import raw,label
         ui=raw();opened,_=ui.begin_tab_item(label('Advanced operations'),flags=ui.TabItemFlags_.set_selected if self.test else 0)
-        if not opened:return
+        if opened:
+            try:self.draw_panel()
+            finally:ui.end_tab_item()
+    def draw_panel(self):
+        from ui_common import raw,label,tr,ROOT,current_recipe
+        import cyui
+        ui=raw()
         try:
             self.frames+=1
             if self.runtime is None:ui.text_wrapped(tr('Runtime unavailable'));return
@@ -43,7 +49,10 @@ class Panel:
                 except Exception as exc:self.message=str(exc)
                 self.future=None
             if self.job:self.job=self.runtime.get_job(self.principal,self.job['jobId'])
-            _,self.index=ui.combo(label('Operation'),self.index,[o['id'] for o in self.runtime.descriptor['operations']])
+            if cyui.begin_properties('##property-Operation'):
+                cyui.property(tr('Operation'))
+                _,self.index=ui.combo('##Operation',self.index,[o['id'] for o in self.runtime.descriptor['operations']])
+                cyui.end_properties()
             operation,state=self.state()
             ui.text_wrapped(tr('All declared parameters are available here. This JSON takes precedence over the simplified form and model preferences.'))
             ui.text_wrapped(operation['description'])
@@ -51,21 +60,36 @@ class Panel:
             ui.same_line()
             if ui.button(label('Import current form')):self.restore(current_recipe());operation,state=self.state()
             if ui.collapsing_header(label('Full input and output schemas')):
-                ui.input_text_multiline('##contract',json.dumps(operation,indent=2,ensure_ascii=False),ui.ImVec2(-1,180),flags=ui.InputTextFlags_.read_only)
-            _,state['text']=ui.input_text_multiline(label('Parameters JSON'),state['text'],ui.ImVec2(-1,200))
-            _,state['backend']=ui.input_text(label('Backend ID'),state['backend'])
-            _,state['model']=ui.input_text(label('Model ID'),state['model'])
+                ui.input_text_multiline('##contract',json.dumps(operation,indent=2,ensure_ascii=False),ui.ImVec2(-1,cyui.dp(180)),flags=ui.InputTextFlags_.read_only)
+            _,state['text']=ui.input_text_multiline(label('Parameters JSON'),state['text'],ui.ImVec2(-1,cyui.dp(200)))
+            if cyui.begin_properties('##property-Backend ID'):
+                cyui.property(tr('Backend ID'))
+                _,state['backend']=ui.input_text('##Backend ID',state['backend'])
+                cyui.end_properties()
+            if cyui.begin_properties('##property-Model ID'):
+                cyui.property(tr('Model ID'))
+                _,state['model']=ui.input_text('##Model ID',state['model'])
+                cyui.end_properties()
             priorities=['Interactive','Critical','High','Normal','Background','Low']
-            _,state['priority']=ui.combo(label('Priority'),state['priority'],priorities)
-            _,state['queue']=ui.input_text(label('Queue timeout (seconds, empty = default)'),state['queue'])
-            _,state['execution']=ui.input_text(label('Execution timeout (seconds, empty = default)'),state['execution'])
+            if cyui.begin_properties('##property-Priority'):
+                cyui.property(tr('Priority'))
+                _,state['priority']=ui.combo('##Priority',state['priority'],priorities)
+                cyui.end_properties()
+            if cyui.begin_properties('##property-Queue timeout (seconds, empty = default)'):
+                cyui.property(tr('Queue timeout (seconds, empty = default)'))
+                _,state['queue']=ui.input_text('##Queue timeout (seconds, empty = default)',state['queue'])
+                cyui.end_properties()
+            if cyui.begin_properties('##property-Execution timeout (seconds, empty = default)'):
+                cyui.property(tr('Execution timeout (seconds, empty = default)'))
+                _,state['execution']=ui.input_text('##Execution timeout (seconds, empty = default)',state['execution'])
+                cyui.end_properties()
             if ui.button(label('Validate and estimate')) and self.future is None:
                 self.future=self.executor.submit(self.client.call,'CanRun',operationId=operation['id'],parameters=self.payload(),backendId=state['backend'],modelId=state['model'])
             ui.same_line()
             active=self.job and self.job['state'] not in ('Completed','Cancelled','Failed')
             ui.begin_disabled(bool(active))
             try:
-                if ui.button(label('Run exact parameters')):
+                if cyui.primary_button(label('Run exact parameters')):
                     options={key:float(state[field]) for key,field in (('queue_timeout','queue'),('execution_timeout','execution')) if state[field].strip()}
                     self.job=self.submit(self.principal,self.session,operation['id'],self.payload(),backend_id=state['backend'],model_id=state['model'],priority=priorities[state['priority']],**options)
                     self.message=json.dumps(self.job,indent=2,ensure_ascii=False)
@@ -73,7 +97,10 @@ class Panel:
             if active:
                 ui.same_line()
                 if ui.button(label('Cancel')):self.runtime.cancel(self.principal,self.job['jobId'])
-            _,state['path']=ui.input_text(label('Configuration path'),state['path'])
+            if cyui.begin_properties('##property-Configuration path'):
+                cyui.property(tr('Configuration path'))
+                _,state['path']=ui.input_text('##Configuration path',state['path'])
+                cyui.end_properties()
             if ui.button(label('Save exact configuration')):
                 from generation_config import recipe,save
                 path=Path(state['path']) if state['path'] else ROOT/'data/configurations'/(operation['id']+'-advanced.json')
@@ -86,10 +113,11 @@ class Panel:
             if self.job:
                 ui.text(self.job['state'])
                 if ui.button(label('Copy job and outputs')):ui.set_clipboard_text(json.dumps(self.job,indent=2,ensure_ascii=False))
-                ui.input_text_multiline('##job',json.dumps(self.job,indent=2,ensure_ascii=False),ui.ImVec2(-1,180),flags=ui.InputTextFlags_.read_only)
-            if self.message:ui.input_text_multiline('##result',self.message,ui.ImVec2(-1,120),flags=ui.InputTextFlags_.read_only)
+                ui.input_text_multiline('##job',json.dumps(self.job,indent=2,ensure_ascii=False),ui.ImVec2(-1,cyui.dp(180)),flags=ui.InputTextFlags_.read_only)
+            if self.message:ui.input_text_multiline('##result',self.message,ui.ImVec2(-1,cyui.dp(120)),flags=ui.InputTextFlags_.read_only)
         except Exception as exc:self.message=str(exc)
-        finally:ui.end_tab_item()
+
+
     def close(self):
         self.executor.shutdown(wait=True,cancel_futures=True)
         if self.runtime is not None:

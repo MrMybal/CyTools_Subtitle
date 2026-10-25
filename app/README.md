@@ -1,8 +1,10 @@
-# CyTools_Subtitle 0.3.0
+# CyTools_Subtitle 0.4.0
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
 ## Desktop
+
+The CyUI interface provides a sidebar workspace, resizable preview/inspector columns, caption search and a separate cue editor. Options offers five semantic themes, compact/comfortable density and persistent text size; legacy dark/light/classic preferences migrate automatically. English is the default; French remains selectable. Shortcuts: Ctrl+O media, Ctrl+Shift+O subtitle JSON, Ctrl+R reload preview, Space play/pause, Left arrow back two seconds and Ctrl+S save a new subtitle bundle. Shortcuts do not intercept text entry.
 
 The Windows portable release includes Python and media/UI dependencies; PyTorch is downloaded separately from Installation: extract the complete archive, then launch ../CyTools_Subtitle.exe. Source checkouts require install.ps1 first. English is the default; French is selectable in Options. Select an audio/video source and Generate subtitles. The player streams decoding off the UI thread, overlays active captions and supports pause/seek. Source and preview pixel dimensions are displayed. The editor changes individual cue text/start/end, shifts the track, adds sound captions and exports SRT/VTT/JSON. Reflow explicitly rebuilds speech from original word timings, replacing manual speech edits while preserving sound captions.
 

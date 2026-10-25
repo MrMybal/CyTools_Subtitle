@@ -18,7 +18,7 @@ ROOT = APP.parent
 from standalone_log import install as install_standalone_log
 journal = install_standalone_log(ROOT)
 PREFERENCES = ROOT / 'data/settings/ui-preferences.json'
-DEFAULTS = {'language': 'en', 'theme': 'dark', 'font_scale': 1.0, 'autosave_generation': False}
+DEFAULTS = {'language': 'en', 'theme': 'mid-grey', 'density': 'compact', 'font_scale': 1.0, 'autosave_generation': False}
 
 def read(path, default):
     try: return json.loads(path.read_text(encoding='utf-8-sig'))
@@ -30,7 +30,10 @@ class Preferences:
         stored = read(self.path, {})
         self.values = {**DEFAULTS, **(stored if isinstance(stored, dict) else {})}
         if self.values['language'] not in ('en', 'fr'): self.values['language'] = 'en'
-        if self.values['theme'] not in ('dark', 'light', 'classic'): self.values['theme'] = 'dark'
+        if not isinstance(self.values['theme'],str):self.values['theme']='mid-grey'
+        self.values['theme']={'dark':'mid-grey','light':'light-grey','classic':'amber-night'}.get(self.values['theme'],self.values['theme'])
+        if self.values['theme'] not in ('mid-grey','light-grey','amber-night','violet','navy'): self.values['theme']='mid-grey'
+        if self.values.get('density') not in ('compact','comfortable'): self.values['density']='compact'
         if not isinstance(self.values.get('autosave_generation'),bool): self.values['autosave_generation']=False
         try: self.values['font_scale'] = min(1.6, max(.8, float(self.values['font_scale'])))
         except (TypeError, ValueError): self.values['font_scale'] = 1.0
@@ -199,18 +202,28 @@ def bind_runtime(callback):
 
 def configuration_panel():
     global _configuration_message,_configuration_name,_configuration_path,_restore_widgets,_configuration_operation
+    import cyui
     from generation_config import save,load
-    native=raw(); native.separator(); native.text(tr('Generation configurations'))
-    changed,enabled=native.checkbox(label('Autosave on generation'),bool(preferences.values.get('autosave_generation')))
-    if changed: preferences.values['autosave_generation']=enabled; preferences.save()
+    native=raw()
+    if cyui.begin_properties('##property-Autosave on generation'):
+        cyui.property(tr('Autosave on generation'))
+        changed,enabled=native.checkbox('##Autosave on generation',bool(preferences.values.get('autosave_generation')))
+        if changed: preferences.values['autosave_generation']=enabled; preferences.save()
+        cyui.end_properties()
     native.text_wrapped(tr('Save current settings as versioned JSON. Loading never starts generation. Autosaves contain the exact submitted parameters and can be replayed by an AI.'))
     if _runtime is not None:
         candidates=[o['id'] for o in _runtime.descriptor['operations'] if not o['id'].startswith(('inspect','diagnos','install','update','list','scan','register','remove','enable','export','launch','save_','preview_','t_'))]
         choices=['Automatic']+candidates
         index=choices.index(_configuration_operation) if _configuration_operation in choices else 0
-        changed,index=native.combo(label('Configuration operation'),index,[tr(x) for x in choices])
-        if changed: _configuration_operation=choices[index] if index else ''
-    _,_configuration_name=native.input_text(label('Configuration name'),_configuration_name)
+        if cyui.begin_properties('##property-Configuration operation'):
+            cyui.property(tr('Configuration operation'))
+            changed,index=native.combo('##Configuration operation',index,[tr(x) for x in choices])
+            if changed: _configuration_operation=choices[index] if index else ''
+            cyui.end_properties()
+    if cyui.begin_properties('##property-Configuration name'):
+        cyui.property(tr('Configuration name'))
+        _,_configuration_name=native.input_text('##Configuration name',_configuration_name)
+        cyui.end_properties()
     if native.button(label('Save configuration')):
         try:
             name=re.sub(r'[^A-Za-z0-9_.-]+','_',_configuration_name).strip('.') or 'configuration'
@@ -226,7 +239,10 @@ def configuration_panel():
         files=_config_dialog.result()
         if files: _configuration_path=files[0]
         _config_dialog=None
-    _,_configuration_path=native.input_text(label('Configuration file'),_configuration_path)
+    if cyui.begin_properties('##property-Configuration file'):
+        cyui.property(tr('Configuration file'))
+        _,_configuration_path=native.input_text('##Configuration file',_configuration_path)
+        cyui.end_properties()
     if native.button(label('Load configuration')):
         try:
             load_current(_configuration_path)
@@ -352,12 +368,12 @@ class ImGuiFacade:
 imgui = ImGuiFacade()
 
 def apply_style():
-    native = raw()
-    {'dark': native.style_colors_dark, 'light': native.style_colors_light,
-     'classic': native.style_colors_classic}[preferences.values['theme']]()
-    style = native.get_style()
-    if hasattr(style, 'font_scale_main'): style.font_scale_main = preferences.values['font_scale']
-    else: native.get_io().font_global_scale = preferences.values['font_scale']
+    import cyui
+    native=raw()
+    from imgui_bundle import hello_imgui
+    cyui.apply(preferences.values['theme'],preferences.values['density'],max(.5,hello_imgui.dpi_window_size_factor()))
+    native.get_style().font_scale_main=preferences.values['font_scale']
+
 
 def license_records():
     manifest = read(APP/'CyTool.json', {})
@@ -390,19 +406,31 @@ def dependency_records():
 def options_panel():
     global _licenses
     native=raw()
-    native.text(tr('Interface preferences'))
-    changed,index=native.combo(label('Language'),('en','fr').index(preferences.values['language']),['English','Français'])
-    if changed: preferences.values['language']=('en','fr')[index]; preferences.save()
-    changed,index=native.combo(label('Theme'),('dark','light','classic').index(preferences.values['theme']),[tr('Dark'),tr('Light'),tr('Classic')])
-    if changed: preferences.values['theme']=('dark','light','classic')[index]; preferences.save(); apply_style()
-    changed,scale=native.slider_float(label('Text size'),preferences.values['font_scale'],.8,1.6,'%.2fx')
-    if changed: preferences.values['font_scale']=scale; preferences.save(); apply_style()
-    if native.button(label('Reset interface preferences')):
+    import cyui
+    cyui.section_title(tr('Interface preferences'))
+    if cyui.begin_properties('##interface-preferences'):
+        cyui.property(tr('Language'))
+        changed,index=native.combo('##Language',('en','fr').index(preferences.values['language']),['English','Français'])
+        if changed: preferences.values['language']=('en','fr')[index]; preferences.save()
+        themes=[t[0] for t in cyui.THEMES]
+        cyui.property(tr('Theme'))
+        changed,index=native.combo('##Theme',themes.index(preferences.values['theme']),[t[1] for t in cyui.THEMES])
+        if changed: preferences.values['theme']=themes[index]; preferences.save(); apply_style()
+        cyui.property(tr('Density'))
+        changed,index=native.combo('##Density',('compact','comfortable').index(preferences.values['density']),[tr('Compact'),tr('Comfortable')])
+        if changed: preferences.values['density']=('compact','comfortable')[index]; preferences.save(); apply_style()
+        cyui.property(tr('Text size'))
+        changed,scale=native.slider_float('##Text size',preferences.values['font_scale'],.8,1.6,'%.2fx')
+        if changed: preferences.values['font_scale']=scale; preferences.save(); apply_style()
+        cyui.end_properties()
+    if cyui.button(label('Reset interface preferences')):
         preferences.values=dict(DEFAULTS); preferences.save(); apply_style()
-    native.text_wrapped(tr('Preferences are saved for this Tool. Model settings and files are not changed.'))
-    configuration_panel()
+    cyui.text_faint(tr('Preferences are saved for this Tool. Model settings and files are not changed.'))
+    if cyui.begin_section(label('Generation configurations')):
+        configuration_panel();cyui.end_section()
     from installation_ui import panel as installation_panel
-    installation_panel(native, tr, label)
+    if cyui.begin_section(label('Installation storage'),False):
+        installation_panel(native,tr,label);cyui.end_section()
     native.separator()
     native.text(tr('Licenses'))
     native.text_wrapped(tr('Application, engine and model licenses are separate. Missing information does not grant usage rights. See the original license for its exact terms; translated interface labels are not a legal translation.'))
@@ -437,7 +465,7 @@ def options_tab():
         try: options_panel()
         finally: _inside_options=False; native.end_tab_item()
 
-def run(runner):
+def run(runner, shell=False):
     global _mesh_panel,_model_panel,_advanced_panel
     from imgui_bundle import hello_imgui
     original=runner.callbacks.show_gui
@@ -459,6 +487,12 @@ def run(runner):
     # Run options smoke checks without mutating the user's saved preference.
     test_language=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-language=')),None)
     if test_language in ('en','fr'): preferences.values['language']=test_language
+    import cyui
+    test_theme=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-theme=')),None)
+    if test_theme in [t[0] for t in cyui.THEMES]:preferences.values['theme']=test_theme
+    if '--ui-test-comfortable' in sys.argv:preferences.values['density']='comfortable'
+    runner.callbacks.load_additional_fonts=cyui.load_fonts
+    runner.callbacks.setup_imgui_style=apply_style
     runner.app_window_params.window_title=tr(runner.app_window_params.window_title)
     import inspect
     source=Path(inspect.getsourcefile(original) or sys.modules['__main__'].__file__).read_text(encoding='utf-8-sig')
@@ -468,8 +502,8 @@ def run(runner):
         frames+=1
         journal.poll()
         if _mesh_panel is not None: _mesh_panel.poll()
-        if frames==1: apply_style()
-        if has_tabs: original()
+        if frames==1 or abs(cyui.dpi()-hello_imgui.dpi_window_size_factor())>.01: apply_style()
+        if shell or has_tabs: original()
         else:
             native=raw()
             if native.begin_tab_bar('###cytool-navigation'):
@@ -481,12 +515,14 @@ def run(runner):
                 if _model_panel is not None:_model_panel.draw_tab()
                 if _advanced_panel is not None:_advanced_panel.draw_tab()
                 options_tab(); native.end_tab_bar()
+        cyui.render_notifications()
         if '--ui-test-config' in sys.argv and frames==5:
             from generation_config import save
             value=current_recipe(); path=ROOT/'data/reports/configuration-roundtrip.json'
             save(path,value)
             original_form=json.loads(json.dumps(form_state()))
-            if 'seed' in form_state(): form_state()['seed']=123456789
+            if 'threads' in form_state():form_state()['threads']=1 if form_state()['threads']!=1 else 2
+            elif 'seed' in form_state(): form_state()['seed']=123456789
             load_current(path)
             assert form_state()==original_form,'Configuration load did not restore the current form'
         if '--ui-test-options' in sys.argv and frames>15: runner.app_shall_exit=True
@@ -525,8 +561,8 @@ def run(runner):
     if '--ui-test-options' in sys.argv:
         reports=ROOT/'data/reports'; reports.mkdir(parents=True,exist_ok=True)
         try:
-            from PIL import Image
+            from standalone_log import save_screenshot
             screenshot=hello_imgui.final_app_window_screenshot()
-            if screenshot.size: Image.fromarray(screenshot).save(reports/('options-'+preferences.values['language']+'.png'))
+            if screenshot.size: save_screenshot(reports/('options-'+preferences.values['language']+'.png'),screenshot)
         except (ImportError,TypeError): pass
         (reports/('options-'+preferences.values['language']+'.json')).write_text(json.dumps({'language':preferences.values['language'],'closed':True,'frames':frames}),encoding='utf-8')

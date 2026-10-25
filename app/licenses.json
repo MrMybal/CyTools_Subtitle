@@ -59,5 +59,11 @@
     "license": "BSD-3-Clause",
     "url": "https://github.com/pytorch/pytorch/blob/v2.14.1/LICENSE",
     "notes": "Downloaded separately from Installation; not included in the base Windows package."
+  },
+  {
+    "kind": "Interface",
+    "name": "CyUI",
+    "license": "MIT",
+    "notes": "Copyright (c) 2026 Cyberalien. Full license: LICENCES/CyUI-MIT.txt. Vendored Python port; source fingerprint: app/cyui-source.json."
   }
 ]

@@ -26,26 +26,34 @@ def configure():
 
 def panel(native, tr, label):
     global _storage, _draft, _message, _cuda_path, _future, _executor
+    import cyui
     from cytools_core.shared_installation import InstallationStorage
     if _storage is None: _storage = InstallationStorage(ROOT)
-    native.separator()
-    native.text(tr('Installation storage'))
+    cyui.section_title(tr('Installation storage'))
     try:
         if _draft is None: _draft = _storage.configuration()
         modes = ('local','shared')
-        changed, index = native.combo(label('Download cache'), modes.index(_draft['downloadMode']),
-                                      [tr('Local to this Tool'),tr('Shared folder')])
-        if changed: _draft['downloadMode'] = modes[index]
-        _, _draft['sharedRoot'] = native.input_text(label('Shared installation folder'), _draft['sharedRoot'])
+        if cyui.begin_properties('##download-cache'):
+            cyui.property(tr('Download cache'))
+            changed,index=native.combo('##Download cache',modes.index(_draft['downloadMode']),[tr('Local to this Tool'),tr('Shared folder')])
+            if changed:_draft['downloadMode']=modes[index]
+            cyui.end_properties()
+        if cyui.begin_properties('##property-Shared installation folder'):
+            cyui.property(tr('Shared installation folder'))
+            _, _draft['sharedRoot'] = native.input_text('##Shared installation folder', _draft['sharedRoot'])
+            cyui.end_properties()
         native.text_wrapped(tr('The shared folder preference applies to this Windows/Linux user. Each Tool chooses whether to use it.'))
         if native.button(label('Save storage settings')):
             _storage.configure(download_mode=_draft['downloadMode'], shared_root=_draft['sharedRoot'])
             _message = 'Saved. Restart the Tool after current jobs finish.'
         native.text_wrapped(tr('Download cache: avoids repeated transfers. Python, PyTorch CUDA libraries and existing model installations remain local. No files are moved.'))
         native.text_wrapped(str(_storage.cache_root()))
-        native.text(tr('Shared CUDA Toolkit'))
+        cyui.section_title(tr('Shared CUDA Toolkit'))
         native.text_wrapped(tr('Register an installed Toolkit to reuse its compiler. Select a version compatible with the engine. This does not replace the NVIDIA driver or PyTorch libraries.'))
-        _, _cuda_path = native.input_text(label('CUDA Toolkit directory'), _cuda_path)
+        if cyui.begin_properties('##property-CUDA Toolkit directory'):
+            cyui.property(tr('CUDA Toolkit directory'))
+            _, _cuda_path = native.input_text('##CUDA Toolkit directory', _cuda_path)
+            cyui.end_properties()
         native.begin_disabled(_future is not None)
         if native.button(label('Verify and register CUDA Toolkit')):
             if _executor is None: _executor = ThreadPoolExecutor(max_workers=1)
@@ -68,9 +76,12 @@ def panel(native, tr, label):
         selected = status['cudaComponent']
         if selected and selected not in keys:
             keys.append(selected); labels.append(tr('Selected CUDA Toolkit is unavailable'))
-        changed, index = native.combo(label('CUDA Toolkit for this Tool'), keys.index(selected) if selected in keys else 0, labels)
-        if changed:
-            _storage.select_cuda(keys[index]); _message = 'Saved. Restart the Tool after current jobs finish.'
+        if cyui.begin_properties('##property-CUDA Toolkit for this Tool'):
+            cyui.property(tr('CUDA Toolkit for this Tool'))
+            changed, index = native.combo('##CUDA Toolkit for this Tool', keys.index(selected) if selected in keys else 0, labels)
+            if changed:
+                _storage.select_cuda(keys[index]); _message = 'Saved. Restart the Tool after current jobs finish.'
+            cyui.end_properties()
         native.text_wrapped(tr('Gated models still require your own account and license acceptance. Use the model installation tab; credentials never enter this shared folder.'))
     except Exception as exc:
         _message = str(exc)

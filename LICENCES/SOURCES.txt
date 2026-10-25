@@ -14,3 +14,7 @@ FFmpeg 7.1 (GPLv3 build supplied by imageio-ffmpeg 0.6.0):
   imageio-ffmpeg packaging source: https://github.com/imageio/imageio-ffmpeg/tree/v0.6.0
   Build configuration: ../app/LICENCES/ffmpeg-build.txt
   License text: ../app/LICENCES/FFmpeg-GPL-3.0.txt
+
+CyUI Python port (MIT), copyright (c) 2026 Cyberalien.
+  Full license: CyUI-MIT.txt (also ../app/LICENCES/CyUI-MIT.txt)
+  Vendored source and upstream fingerprint: ../app/cyui-source.json
