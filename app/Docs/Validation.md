@@ -51,3 +51,12 @@ The Tool integrates the author-provided CyUI Python port, with its MIT notice an
 Windows GUI checks exercised all five themes and compact/comfortable density, English/French, a 1024×768 window, real video playback with subtitle overlay, cue search layout, a timing repair through the existing runtime, Options configuration save/load, selectable logs and native clipboard round trip, and complete advanced-operation access. The 24 existing Tool/timing tests passed using the delivered CPython 3.11.9 and private development test tools. No inference algorithm or operation contract changed. Legacy theme preferences and language/text-size persistence were checked.
 
 A fresh portable product without PyTorch or model weights launched through its actual EXE from another working directory. Its workspace rendered the guided missing-PyTorch state and remained usable. The private installed product retains its separately downloaded runtime and models. Linux/macOS and higher-DPI hardware were not exercised; DPI scaling uses the platform factor supplied by HelloImGui.
+
+
+## Video preview and native file drop — 0.4.1 (2026-10-25)
+
+A real 1676×992 screen capture reproduced the preview failure: PyAV exposed RGB rows with padding, while the image binding requires packed C-contiguous memory. Initial probe and subsequent decode/seek now use the same bounded RGB conversion; the UI holds one frame reference through its draw and reports rendering errors without closing the application. The capture was exercised through playback, seek and pause after the fix.
+
+External file drops are connected to the existing bundled GLFW window, with callback lifetime and cleanup before window destruction. The callback queues UTF-8 paths for processing on a normal UI frame, through the same opener as the file picker. Windows tests verified the Explorer acceptance style and delivered actual WM_DROPFILES events to that window: video, an accented audio path, video with subtitle JSON, and a refused text file. Tests did not synthesize a mouse drag gesture. Files remain at their original locations, and dropping does not submit generation.
+
+The suite passed 30 tests, including four padded capture widths, first-frame and seek-frame packing, and invalid video error handling. No model or PyTorch dependency was added. Windows x64 was exercised; native drop integration on Linux/macOS remains unvalidated.

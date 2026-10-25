@@ -1,8 +1,10 @@
-# CyTools_Subtitle 0.4.0
+# CyTools_Subtitle 0.4.1
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
 ## Desktop
+
+Version 0.4.1 fixes preview of videos with padded RGB rows, including arbitrary capture widths. Drop an audio/video file anywhere on the main window to load its preview; a subtitle JSON document can also be dropped. Invalid files show an error without closing the application.
 
 The CyUI interface provides a sidebar workspace, resizable preview/inspector columns, caption search and a separate cue editor. Options offers five semantic themes, compact/comfortable density and persistent text size; legacy dark/light/classic preferences migrate automatically. English is the default; French remains selectable. Shortcuts: Ctrl+O media, Ctrl+Shift+O subtitle JSON, Ctrl+R reload preview, Space play/pause, Left arrow back two seconds and Ctrl+S save a new subtitle bundle. Shortcuts do not intercept text entry.
 

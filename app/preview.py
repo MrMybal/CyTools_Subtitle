@@ -4,6 +4,16 @@ import time
 from pathlib import Path
 
 
+def preview_rgb(frame):
+    """Publish a bounded packed RGB image, including for padded FFmpeg rows."""
+    import numpy as np
+    if frame.width>1280:
+        frame=frame.reformat(width=1280,height=max(2,round(frame.height*1280/frame.width)),format="rgb24")
+    # PyAV can return a view with row padding (e.g. 1676px capture). ImGui's
+    # ndarray binding requires a C-contiguous image; never publish that view.
+    return np.ascontiguousarray(frame.to_ndarray(format="rgb24"))
+
+
 class Player:
     def __init__(self):
         self.path=""; self.duration=0.; self.position=0.; self.frame=None
@@ -41,7 +51,7 @@ class Player:
                 self.duration=float(media.duration/av.time_base) if media.duration is not None else max((float(s.duration*s.time_base) for s in media.streams if s.duration is not None),default=0)
                 if media.streams.video:
                     stream=media.streams.video[0]; self.width=stream.codec_context.width;self.height=stream.codec_context.height
-                    self.frame=next(media.decode(stream)).to_ndarray(format="rgb24")
+                    self.frame=preview_rgb(next(media.decode(stream)))
                 else: self.width=self.height=0
         except Exception as exc: self.error=str(exc)
 
@@ -115,7 +125,7 @@ class Player:
                             self._stop.wait(.005)
                         if self._stop.is_set():break
                         if pts<self.current_time()-.15:continue
-                    self.frame=frame.reformat(width=min(frame.width,1280),height=max(2,round(frame.height*min(1,1280/frame.width))),format="rgb24").to_ndarray()
+                    self.frame=preview_rgb(frame)
                     if single:break
         except Exception as exc:
             if not self._stop.is_set():self.error=str(exc)

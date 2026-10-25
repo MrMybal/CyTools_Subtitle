@@ -8,6 +8,7 @@ from imgui_bundle import hello_imgui, immvision, portable_file_dialogs as pfd
 from ui_common import imgui, run, configure_generation, tr
 from tool import APP, ROOT, create_runtime, model_records
 from preview import Player
+from file_drop import FileDrops
 import subtitles
 import updates
 import runtime_components
@@ -38,6 +39,9 @@ def main():
     test_repair='--ui-test-repair' in sys.argv
     test_preview='--ui-test-preview' in sys.argv
     test_started=time.monotonic();test_played=False
+    test_media=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-media=')),None)
+    test_drop='--ui-test-file-drop' in sys.argv
+    drops=FileDrops();drop_count=0;preview_frames=0;render_error="";test_paused=False
     view='Workspace';search='';last_state=''
     for flag,target in [('--ui-test-installation','Installation'),('--ui-test-repair','Subtitle editor'),('--ui-test-options','Options'),('--ui-test-logs','Application log'),('--ui-test-advanced','Advanced operations')]:
         if flag in sys.argv:view=target
@@ -53,6 +57,8 @@ def main():
     image_params.show_pixel_info=False;image_params.show_zoom_buttons=False;image_params.can_resize=False;image_params.pan_with_mouse=False;image_params.zoom_with_mouse_wheel=False;image_params.refresh_image=True;image_params.resize_keep_aspect_ratio=True
     runner=hello_imgui.RunnerParams();runner.app_window_params.window_title="CyTools_Subtitle"
     runner.app_window_params.window_geometry.size=(1500,960)
+    runner.platform_backend_type=hello_imgui.PlatformBackendType.glfw
+    runner.callbacks.before_exit=drops.close
     runner.imgui_window_params.default_imgui_window_type=hello_imgui.DefaultImGuiWindowType.no_default_window
     if '--ui-test-small' in sys.argv:runner.app_window_params.window_geometry.size=(1024,768)
     (ROOT/"data/settings").mkdir(parents=True,exist_ok=True)
@@ -69,6 +75,29 @@ def main():
             nonlocal dialog,dialog_kind
             dialog_kind=kind
             dialog=pfd.select_folder(tr("Export folder")) if kind=="export" else pfd.open_file(tr("Open media") if kind=="media" else tr("Open subtitle document"))
+        def open_path(path,kind=None):
+            nonlocal document,document_path,subtitle_job,view,message,render_error
+            try:
+                candidate=Path(path).expanduser().resolve()
+                if not candidate.is_file():raise ValueError(tr('The dropped path is not a file.'))
+                if kind=='document' or (kind is None and candidate.suffix.lower()=='.json'):
+                    parsed=subtitles.validate(json.loads(candidate.read_text('utf-8-sig')))
+                    document=parsed;document_path=str(candidate);subtitle_job=None
+                    if document['cues']:select_cue(0)
+                    view='Workspace'
+                else:
+                    if kind is None and candidate.suffix.lower() not in ('.wav','.mp3','.m4a','.aac','.flac','.ogg','.opus','.aiff','.aif','.mp4','.mkv','.mov','.webm','.avi','.wmv','.m4v','.wma'):
+                        raise ValueError(tr('Drop an audio/video file or a subtitle JSON document.'))
+                    player.open(str(candidate),form['audio_stream']);form['media']=str(candidate);render_error='';view='Workspace'
+                message=''
+            except Exception as exc:
+                message=str(exc);cyui.notify(message,'error');ui_common.journal.write(message,'ERROR')
+        def install_drop_test():
+            if test_drop:
+                path=ROOT/'data/reports/drop-window.json';path.parent.mkdir(parents=True,exist_ok=True)
+                import os
+                path.write_text(json.dumps({'hwnd':drops.native_window,'pid':os.getpid(),'error':drops.error}),'utf-8')
+        runner.callbacks.post_init=lambda:(drops.install(),install_drop_test())
         def select_cue(index):
             nonlocal selected,cue_start,cue_end,cue_text,cue_kind
             selected=index
@@ -77,8 +106,23 @@ def main():
             keys=("max_cps","min_duration","max_advance","max_delay","max_extension","min_gap","merge_fragments","max_chars","max_lines","max_duration","pause")
             submit("repair_subtitles",{"document":document_path,**{k:form[k] for k in keys}})
         def gui():
-            nonlocal view,search,last_state,job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
+            nonlocal drop_count,preview_frames,render_error,test_paused,view,search,last_state,job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
             frames+=1
+            if frames==3 and test_media:open_path(test_media,'media')
+            for batch in drops.poll():
+                # A project is one media file and optionally one subtitle document.
+                if not batch:
+                    message=tr('Could not read the dropped file paths.');cyui.notify(message,'error');continue
+                if len(batch)>2:
+                    message=tr('Drop one media file and optionally one subtitle JSON document.');cyui.notify(message,'warning');continue
+                for path in batch:
+                    open_path(path);drop_count+=1
+            if frames==1 and drops.error:
+                ui_common.journal.write('File drop: '+drops.error,'ERROR')
+            if (test_media or test_drop) and player.duration>0:
+                if not test_played:player.seek(.5,play=True);test_played=True
+                elif time.monotonic()-test_started>4 and not test_paused:player.stop();test_paused=True
+            if (test_media or test_drop) and time.monotonic()-test_started>9:runner.app_shall_exit=True
             if frames==1 and document and document["cues"]:select_cue(0)
             if test_repair and frames==3:repair_current()
             if test_repair and frames>30 and job and job["state"] in ("Completed","Failed","Cancelled"):runner.app_shall_exit=True
@@ -90,11 +134,8 @@ def main():
                 chosen=result if isinstance(result,str) else result[0] if result else ""
                 if chosen:
                     try:
-                        if dialog_kind=="media": form["media"]=chosen;player.open(chosen,form["audio_stream"])
-                        elif dialog_kind=="document":
-                            document=subtitles.validate(json.loads(Path(chosen).read_text("utf-8-sig")));document_path=chosen;subtitle_job=None
-                            if document["cues"]: select_cue(0)
-                        elif dialog_kind=="export":export_folder=chosen
+                        if dialog_kind=='export':export_folder=chosen
+                        else:open_path(chosen,dialog_kind)
                     except Exception as exc:message=str(exc)
             if future and future.done():
                 try: message=json.dumps(future.result(),ensure_ascii=False,indent=2);cyui.notify(tr('Completed'),'success')
@@ -178,16 +219,23 @@ def main():
                 cyui.begin_card('##preview-card',tr('Preview'))
                 room=imgui.get_content_region_avail().x
                 height=min(cyui.dp(335),room*9/16)
-                if player.frame is not None:
-                    height=min(height,room*player.frame.shape[0]/player.frame.shape[1])
-                    width=height*player.frame.shape[1]/player.frame.shape[0]
+                frame=player.frame
+                if frame is not None:
+                    height=min(height,room*frame.shape[0]/frame.shape[1])
+                    width=height*frame.shape[1]/frame.shape[0]
                     image_params.image_display_size=(max(1,int(width)),max(1,int(height)))
                     left=imgui.get_cursor_pos_x()
                     canvas=imgui.get_cursor_screen_pos()
                     imgui.get_window_draw_list().add_rect_filled(canvas,(canvas.x+room,canvas.y+height),cyui.palette().bg0)
                     imgui.set_cursor_pos_x(left+(room-width)/2)
                     origin=imgui.get_cursor_screen_pos()
-                    immvision.image('##video',player.frame,image_params)
+                    try:
+                        immvision.image('##video',frame,image_params);preview_frames+=1
+                    except (TypeError,ValueError,RuntimeError) as exc:
+                        detail=tr('Video preview failed: ')+str(exc)
+                        if detail!=render_error:ui_common.journal.write(detail,'ERROR');cyui.notify(detail,'error')
+                        render_error=detail
+                        imgui.dummy((max(1,width),max(1,height)))
                     if document:
                         caption='\n'.join(c['text'] for c in document['cues'] if c['start']<=player.current_time()<c['end'])
                         if caption:
@@ -198,7 +246,7 @@ def main():
                     imgui.set_cursor_pos_x(left)
                 else:
                     imgui.begin_child('##empty-preview',(0,height))
-                    cyui.empty_state(tr('Audio / video preview'),tr('Open media to review your subtitles in sync.'),cyui.icon.audio if form['media'] else cyui.icon.video)
+                    cyui.empty_state(tr('Audio / video preview'),tr('Drop an audio/video file here or open media to review your subtitles in sync.'),cyui.icon.audio if form['media'] else cyui.icon.video)
                     if form['media']:cyui.text_dim(Path(form['media']).name)
                     imgui.end_child()
                 with cyui.scoped_disabled(not player.duration):
@@ -209,8 +257,9 @@ def main():
                     changed,position=imgui.slider_float('##Timeline (seconds)',player.current_time(),0,max(.1,player.duration),'%.2f s')
                     if changed:player.seek(position)
                     imgui.same_line();cyui.text_mono(f'{player.current_time():.1f} / {player.duration:.1f}')
-                cyui.text_faint(tr('Source pixels / preview pixels')+f': {player.width} × {player.height} / '+(f'{player.frame.shape[1]} × {player.frame.shape[0]}' if player.frame is not None else '—'))
+                cyui.text_faint(tr('Source pixels / preview pixels')+f': {player.width} × {player.height} / '+(f'{frame.shape[1]} × {frame.shape[0]}' if frame is not None else '—'))
                 if player.error:cyui.callout('error',player.error)
+                if render_error:cyui.callout('error',render_error)
                 cyui.end_card()
                 cyui.begin_card('##cue-summary',tr('Subtitles'))
                 if document:
@@ -533,6 +582,7 @@ def main():
             elif view=='Advanced operations':ui_common._advanced_panel.draw_panel()
             if job and job['state']=='Completed' and job['operationId']=='inspect_media':
                 imgui.input_text_multiline('Inspection result',json.dumps(job['outputs'],indent=2,ensure_ascii=False),(0,cyui.dp(120)),flags=imgui.InputTextFlags_.read_only)
+            if drops.error:cyui.callout('warning',tr('File drop unavailable: ')+drops.error)
             if message:
                 if cyui.begin_section(label('Last action result')):
                     imgui.input_text_multiline('##last-action',message,(0,cyui.dp(100)),flags=imgui.InputTextFlags_.read_only);cyui.end_section()
@@ -543,6 +593,12 @@ def main():
         try:
             if automatic and github:future=pool.submit(updates.check)
             run(runner,shell=True)
+            if test_media or test_drop:
+                from standalone_log import save_screenshot
+                frame=player.frame
+                report={'media':form['media'],'dropCount':drop_count,'cueCount':len(document['cues']) if document else 0,'message':message,'dropError':drops.error,'renderedFrames':preview_frames,'sourcePixels':[player.width,player.height],'previewPixels':[frame.shape[1],frame.shape[0]] if frame is not None else None,'contiguous':bool(frame is not None and frame.flags.c_contiguous),'error':render_error or player.error,'played':test_played,'paused':test_paused}
+                (ROOT/'data/reports/preview-input-test.json').write_text(json.dumps(report,indent=2),'utf-8')
+                save_screenshot(ROOT/'data/reports/preview-input-test.png',hello_imgui.final_app_window_screenshot())
             if any(a.startswith('--ui-test-theme=') for a in sys.argv) or '--ui-test-view' in ' '.join(sys.argv):
                 from standalone_log import save_screenshot
                 name='cyui-'+preferences.values['theme']+'-'+preferences.values['language']+'-'+view.replace(' ','-')+'-'+preferences.values['density']+'.png'

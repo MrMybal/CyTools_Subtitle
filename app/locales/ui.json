@@ -8898,5 +8898,33 @@
   "Runtime unavailable": {
     "en": "Runtime unavailable",
     "fr": "Moteur indisponible"
+  },
+  "The dropped path is not a file.": {
+    "en": "The dropped path is not a file.",
+    "fr": "Le chemin déposé n’est pas un fichier."
+  },
+  "Drop an audio/video file or a subtitle JSON document.": {
+    "en": "Drop an audio/video file or a subtitle JSON document.",
+    "fr": "Déposez un fichier audio/vidéo ou un document JSON de sous-titres."
+  },
+  "Could not read the dropped file paths.": {
+    "en": "Could not read the dropped file paths.",
+    "fr": "Impossible de lire les chemins des fichiers déposés."
+  },
+  "Drop one media file and optionally one subtitle JSON document.": {
+    "en": "Drop one media file and optionally one subtitle JSON document.",
+    "fr": "Déposez un média et, si nécessaire, un document JSON de sous-titres."
+  },
+  "Video preview failed: ": {
+    "en": "Video preview failed: ",
+    "fr": "Échec de la prévisualisation vidéo : "
+  },
+  "Drop an audio/video file here or open media to review your subtitles in sync.": {
+    "en": "Drop an audio/video file here or open media to review your subtitles in sync.",
+    "fr": "Déposez un fichier audio/vidéo ici ou ouvrez un média pour vérifier le calage des sous-titres."
+  },
+  "File drop unavailable: ": {
+    "en": "File drop unavailable: ",
+    "fr": "Glisser-déposer indisponible : "
   }
 }

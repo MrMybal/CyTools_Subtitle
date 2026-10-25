@@ -17,7 +17,7 @@ Local subtitle generation from audio and video, with a Dear ImGui media player, 
 
 ## Windows portable download
 
-Download `CyTools_Subtitle-0.4.0-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
+Download `CyTools_Subtitle-0.4.1-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
 
 English is the default interface language; French is selectable in Options. Keep app/ and runtime/ next to the executable. Settings, models and outputs are created in data/. Private release downloads require a GitHub account with access to the repository. The in-app updater currently supports public release downloads; use the browser while this repository is private.
 
@@ -72,6 +72,8 @@ MCP/CLI clients use **runtime_status** and **install_runtime**. Installation req
 The 0.3.0 base runtime uses a new update ABI. For a 0.2.x installation, extract the new full Windows ZIP into a separate directory. Existing Phonon model folders can be referenced through Installation without moving them; keep existing data and results.
 
 ## CyUI desktop
+
+Version 0.4.1 fixes a video preview crash on captures with padded RGB image rows. Drag an audio/video file or subtitle JSON document from the file manager onto the main window to open it. Preview decoding remains bounded and runs off the UI thread.
 
 Version 0.4.0 uses CyUI with a sidebar, synchronized player, searchable phrase captions and an inspector for edits. Choose Mid Grey, Light Grey, Amber Night, Violet or Navy in Options, with compact/comfortable density and text scaling. English remains the default, with French selectable. PyTorch and models are still separate downloads.
 
