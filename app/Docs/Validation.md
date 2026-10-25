@@ -75,3 +75,12 @@ After explicit acceptance of the official conditions, Community-1 downloaded at 
 These are short synthetic integration samples, not a quality benchmark for natural dialogue, simultaneous speakers or background noise. They do not establish a general processing-speed guarantee. See [Diarization](Diarization.md) for the execution contract and limits. No gated weights or optional runtime are included in the base release.
 
 A clean relocated 0.5.0 base package launched through its actual Windows EXE from a different working directory without torch, the optional diarization runtime or model weights. Its editor completed real rename/manual-assignment jobs, and its French Installation page rendered both missing-component states and guided installation controls.
+
+
+## Caption boundary repair — 0.5.1
+
+A user recording of 39.3 seconds exposed punctuation-only captions and spurious one-word splits when word timestamps and voice regions differed by a few frames. The same media and generation parameters were run again with Phonon-2.5 and Community-1 after the correction. The output changed from 15 to 8 captions, removed the isolated exclamation/question marks, and preserved the original recognized words and their timestamps exactly. The original recording/results remain unchanged.
+
+The suite passes 54 tests, including punctuation at sentence ends, layout duration/pause limits, bounded near-region attribution, unchanged raw timelines, ambiguous word boundaries and clearly covered short speaker replies. This validates a reproduced segmentation fix; it does not establish correct transcription or neural speaker identities throughout this natural recording.
+
+The actual Windows GUI loaded this capture and the corrected JSON through native file-drop events, decoded packed frames, played, sought and paused without a preview error.

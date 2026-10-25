@@ -17,7 +17,7 @@ Local subtitle generation from audio and video, with a Dear ImGui media player, 
 
 ## Windows portable download
 
-Download `CyTools_Subtitle-0.5.0-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
+Download `CyTools_Subtitle-0.5.1-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
 
 English is the default interface language; French is selectable in Options. Keep app/ and runtime/ next to the executable. Settings, models and outputs are created in data/. Private release downloads require a GitHub account with access to the repository. The in-app updater currently supports public release downloads; use the browser while this repository is private.
 
@@ -84,7 +84,7 @@ CyUI is MIT-licensed by Cyberalien; its full notice is in [LICENCES/CyUI-MIT.txt
 Copyright (c) 2026 Cyberalien. CyTools_Subtitle is licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only). The bundled CyToolsCore SDK remains MIT. Engines, libraries and model weights retain their separate licenses, including Apache-2.0, CC-BY-4.0 and the relevant FFmpeg build licenses. See [LICENSE](LICENSE), [LICENCES](LICENCES/SOURCES.txt) and app/LICENCES.
 
 
-## Optional speaker diarization (0.5.0)
+## Optional speaker diarization (0.5.0+)
 
 Community-1 attributes speech to anonymous speaker IDs. Phonon still supplies the text and original word timestamps. Enable **Identify different speakers** in generation, or open an existing JSON document in the editor and use **Speakers → Identify speakers in this document**. The editor lets you rename people and override the speaker of individual captions. Names are display labels; the software does not discover real identities or identify a person across unrelated recordings.
 
@@ -99,3 +99,5 @@ The JSON document remains schemaVersion 1 with additive optional `speakers`, `di
 CLI/MCP operations: `diarization_status`, `check_diarization_access`, `install_diarization_runtime`, `install_diarization_model`, `register_diarization_model`, `diarize_subtitles`, and `rename_speakers`. Network installation/access operations require an authenticated network permission and install operations require explicit license review. Local model registration references an official compatible Community-1 bundle in place and hashes its files. All file inputs are automatically imported privately; export wanted outputs before FinishTask.
 
 CPU/Windows is the integrated diarization path. GPU execution, speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](app/Docs/Diarization.md) for the precise validation state.
+
+Version 0.5.1 fixes punctuation-only captions and spurious word-boundary splits introduced by small ASR/voice timestamp differences. Original word timestamps and raw neural timelines remain unchanged; speaker/transcription mistakes still need review.

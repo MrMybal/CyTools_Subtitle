@@ -42,6 +42,10 @@ def validate(document):
     return document
 
 
+def closing_punctuation(text):
+    return bool(text.strip()) and all(c in '.,!?;:%…)]}»”’。，！？；：' for c in text.strip())
+
+
 def layout(words, max_chars=42, max_lines=2, max_duration=6.0, pause=.65):
     cues, group = [], []
     def emit():
@@ -51,7 +55,13 @@ def layout(words, max_chars=42, max_lines=2, max_duration=6.0, pause=.65):
                      "end": max(group[-1]["end"], group[0]["start"]+.04),
                      "text": "\n".join(textwrap.wrap(text, max_chars, break_long_words=False, break_on_hyphens=False)), "kind": "speech",**({"speaker":group[0]["speaker"]} if "speaker" in group[0] else {})})
         group.clear()
+    tokens=[]
     for word in words:
+        if tokens and closing_punctuation(word['text']) and word['start']-tokens[-1]['end']<=pause:
+            previous=tokens[-1]
+            tokens[-1]={**previous,'text':previous['text']+' '+word['text'],'end':max(previous['end'],word['end'])}
+        else:tokens.append(word)
+    for word in tokens:
         if group:
             candidate = " ".join(w["text"] for w in [*group, word])
             lines = textwrap.wrap(candidate, max_chars, break_long_words=False, break_on_hyphens=False)

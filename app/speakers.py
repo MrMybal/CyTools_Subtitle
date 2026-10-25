@@ -49,7 +49,7 @@ class Timeline(list):
         self.ends=[turn['end'] for turn in self]
 
 
-def attribution(start,end,segments):
+def attribution(start,end,segments,preferred=None):
     totals={}
     first=bisect_right(segments.ends,start) if isinstance(segments,Timeline) else 0
     for index in range(first,len(segments)):
@@ -59,7 +59,8 @@ def attribution(start,end,segments):
         if overlap:totals[turn["speaker"]]=totals.get(turn["speaker"],0.)+overlap
     if not totals:return None,0.,[]
     ranked=sorted(totals,key=lambda key:(-totals[key],key))
-    return ranked[0],min(1.,totals[ranked[0]]/max(.001,end-start)),ranked
+    chosen=ranked[0] if preferred is None else preferred
+    return chosen,min(1.,totals.get(chosen,0.)/max(.001,end-start)),ranked
 
 
 def label_cues(document,replace_manual=False):
@@ -67,15 +68,50 @@ def label_cues(document,replace_manual=False):
     for cue in document["cues"]:
         if cue.get("kind","speech")!="speech" or (cue.get("speakerManual") and not replace_manual):continue
         speaker,fraction,candidates=attribution(cue["start"],cue["end"],segments)
-        cue["speaker"]=speaker;cue["speakerOverlapFraction"]=round(fraction,4)
+        cue["speaker"]=speaker or nearby_speaker(cue['start'],cue['end'],segments);cue["speakerOverlapFraction"]=round(fraction,4)
         cue["speakerCandidates"]=candidates
         cue["speakerManual"]=False
     return document
 
 
+def nearby_speaker(start,end,segments,tolerance=.25):
+    """Resolve small ASR/VAD boundary differences, never a long silent gap."""
+    first=bisect_right(segments.ends,start) if isinstance(segments,Timeline) else 0
+    candidates=segments[max(0,first-1):first+1]
+    if not candidates:return None
+    distance=lambda turn:max(0.,turn['start']-end,start-turn['end'])
+    nearest=min(candidates,key=distance)
+    return nearest['speaker'] if distance(nearest)<=tolerance else None
+
+
 def attributed_words(document):
+    import subtitles
     segments=Timeline(document.get("diarization",{}).get("exclusiveSegments",[]))
-    return [{**w,"speaker":attribution(w["start"],max(w["end"],w["start"]+.001),segments)[0]} for w in document.get("words",[])]
+    words=document.get('words',[])
+    evidence=[attribution(w['start'],max(w['end'],w['start']+.001),segments) for w in words]
+    result=[]
+    for index,word in enumerate(words):
+        start,end=word['start'],max(word['end'],word['start']+.001)
+        speaker,fraction,candidates=evidence[index]
+        speaker=speaker or nearby_speaker(start,end,segments)
+        # Keep weak mixed boundary evidence from creating a one-word speaker
+        # change. A fully covered brief reply still establishes its own voice.
+        if result and fraction<.6 and len(candidates)>1 and start-result[-1]['end']<=.65:
+            previous=result[-1]['speaker']
+            if previous in candidates and attribution(start,end,segments,preferred=previous)[1]>=.25:
+                speaker=previous
+        # A near-boundary fallback has no overlap evidence of its own. Prefer
+        # the following well-covered word in the same unfinished phrase.
+        if speaker is not None and fraction==0 and index+1<len(words) and not word['text'].endswith(('.', '?', '!')):
+            following=words[index+1];following_speaker,coverage,_=evidence[index+1]
+            if following_speaker and coverage>=.6 and following['start']-end<=.65:
+                speaker=following_speaker
+        # ASR often timestamps punctuation separately, after the voice ended.
+        # A punctuation token cannot establish a new speaker identity.
+        if result and subtitles.closing_punctuation(word['text']) and start-result[-1]['end']<=.65:
+            speaker=result[-1]['speaker']
+        result.append({**word,'speaker':speaker})
+    return result
 
 
 def attach(document,result,*,rebuild=False,layout_options=None,replace_manual=False):

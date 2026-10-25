@@ -207,3 +207,58 @@ def test_registered_local_model_uses_registry_hashes_in_preflight(tmp_path,monke
         assert result['cues'][0]['speaker']=='speaker-1'
         assert calls==['probe','extract','infer']
         assert not list((Path(job['workspace'])/'intermediates').glob('*'))
+
+
+def test_punctuation_and_vad_boundary_gaps_do_not_fragment_a_sentence():
+    doc=document();doc['words']=[{'text':'Hello','start':1.,'end':1.15},{'text':'world','start':1.2,'end':1.6},{'text':'!','start':1.78,'end':1.86}]
+    turns=[{'start':1.18,'end':1.65,'speaker':'speaker-1'}]
+    result={**analysis(),'segments':turns,'exclusiveSegments':turns}
+    rebuilt=speakers.attach(doc,result,rebuild=True)
+    speech=[c for c in rebuilt['cues'] if c['kind']=='speech']
+    assert len(speech)==1 and speech[0]['text']=='Hello world !' and speech[0]['speaker']=='speaker-1'
+    assert rebuilt['words']==doc['words']
+
+
+def test_nearby_attribution_is_bounded_and_real_voice_change_remains():
+    doc=document();doc['words']=[{'text':'First','start':0.,'end':.6},{'text':'!','start':.65,'end':.7},{'text':'Second','start':1.,'end':1.5},{'text':'?','start':1.55,'end':1.6},{'text':'Uncovered.','start':5.,'end':5.6}]
+    turns=[{'start':0.,'end':.6,'speaker':'speaker-1'},{'start':1.,'end':1.5,'speaker':'speaker-2'}]
+    rebuilt=speakers.attach(doc,{**analysis(),'segments':turns,'exclusiveSegments':turns},rebuild=True)
+    speech=[c for c in rebuilt['cues'] if c['kind']=='speech']
+    assert [c['text'] for c in speech]==['First !','Second ?','Uncovered.']
+    assert [c['speaker'] for c in speech]==['speaker-1','speaker-2',None]
+    assert rebuilt['words']==doc['words']
+
+
+def test_extra_punctuation_after_sentence_end_stays_with_caption():
+    words=[{'text':'Really?','start':0.,'end':.5},{'text':'!','start':.55,'end':.6}]
+    cues=subtitles.layout(words)
+    assert len(cues)==1 and cues[0]['text']=='Really? !' and cues[0]['end']==.6
+
+
+def test_punctuation_respects_layout_duration_and_distant_pauses():
+    words=[{'text':'First','start':0.,'end':.4},{'text':'second','start':.5,'end':.9},{'text':'!','start':.95,'end':1.1}]
+    before=copy.deepcopy(words)
+    cues=subtitles.layout(words,max_duration=1.)
+    assert [c['text'] for c in cues]==['First','second !']
+    assert all(c['end']-c['start']<=1 for c in cues) and words==before
+    distant=subtitles.layout([words[0],{'text':'!','start':5.,'end':5.1}])
+    assert len(distant)==2 and distant[0]['end']==.4
+
+
+def test_weak_boundary_assignment_uses_phrase_context_without_changing_timeline():
+    doc=document();doc['words']=[{'text':'Hello','start':0.,'end':.1},{'text':'there','start':.25,'end':.65},{'text':'!','start':.75,'end':.8}]
+    turns=[{'start':.15,'end':.2,'speaker':'speaker-1'},{'start':.25,'end':.7,'speaker':'speaker-2'}]
+    before=copy.deepcopy(turns)
+    result=speakers.attach(doc,{**analysis(),'segments':turns,'exclusiveSegments':turns},rebuild=True)
+    speech=[c for c in result['cues'] if c['kind']=='speech']
+    assert len(speech)==1 and speech[0]['text']=='Hello there !'
+    assert result['words']==doc['words'] and result['diarization']['exclusiveSegments']==before
+
+
+def test_ambiguous_word_end_does_not_override_clear_short_reply():
+    doc=document();doc['words']=[{'text':'Stay','start':0.,'end':.4},{'text':'here.','start':.7,'end':1.1}]
+    turns=[{'start':0.,'end':.81,'speaker':'speaker-1'},{'start':.85,'end':1.05,'speaker':'speaker-2'}]
+    doc['diarization']={'exclusiveSegments':turns}
+    assert [w['speaker'] for w in speakers.attributed_words(doc)]==['speaker-1','speaker-1']
+    doc['words'][1]={'text':'No.','start':.85,'end':1.05}
+    assert [w['speaker'] for w in speakers.attributed_words(doc)]==['speaker-1','speaker-2']

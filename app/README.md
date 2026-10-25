@@ -1,8 +1,10 @@
-# CyTools_Subtitle 0.5.0
+# CyTools_Subtitle 0.5.1
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
 ## Desktop
+
+Version 0.5.1 keeps separately timestamped punctuation with its words and handles small ASR/voice-boundary offsets when laying out captions. Ambiguous word-boundary changes use nearby phrase context; original word timestamps and raw model timelines are retained. This improves caption segmentation and does not guarantee correct speaker clustering or transcription.
 
 Version 0.4.1 fixes preview of videos with padded RGB rows, including arbitrary capture widths. Drop an audio/video file anywhere on the main window to load its preview; a subtitle JSON document can also be dropped. Invalid files show an error without closing the application.
 

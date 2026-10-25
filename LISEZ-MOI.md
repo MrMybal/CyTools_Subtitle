@@ -34,3 +34,5 @@ Version 0.4.0 : interface CyUI avec navigation latérale, lecteur synchronisé, 
 Version 0.4.1 : correction du crash de prévisualisation avec certaines largeurs de capture. Déposez un fichier audio/vidéo ou un document JSON de sous-titres depuis l’Explorateur dans la fenêtre pour l’ouvrir.
 
 Version 0.5.0 : identification facultative des locuteurs avec Community-1, noms modifiables, attribution par réplique et exports avec noms. Installez séparément le moteur CPU et les poids dans Installation après acceptation des conditions Hugging Face. Aucun jeton dans les configurations ou paramètres MCP.
+
+0.5.1 : correction des sous-titres réduits à de la ponctuation et des coupures parasites en bord de mot. Les mots et les détections brutes du modèle sont conservés ; les erreurs de transcription et de locuteur doivent toujours être relues.
