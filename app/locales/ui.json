@@ -8926,5 +8926,193 @@
   "File drop unavailable: ": {
     "en": "File drop unavailable: ",
     "fr": "Glisser-déposer indisponible : "
+  },
+  "Known speakers (0 = automatic)": {
+    "en": "Known speakers (0 = automatic)",
+    "fr": "Nombre de voix connu (0 = automatique)"
+  },
+  "Minimum speakers": {
+    "en": "Minimum speakers",
+    "fr": "Nombre minimum de voix"
+  },
+  "Maximum speakers": {
+    "en": "Maximum speakers",
+    "fr": "Nombre maximum de voix"
+  },
+  "Diarization duration limit (seconds)": {
+    "en": "Diarization duration limit (seconds)",
+    "fr": "Durée limite de diarisation (secondes)"
+  },
+  "Segmentation batch size": {
+    "en": "Segmentation batch size",
+    "fr": "Taille des lots de segmentation"
+  },
+  "Embedding batch size": {
+    "en": "Embedding batch size",
+    "fr": "Taille des lots d’empreintes vocales"
+  },
+  "Include speaker names in subtitles": {
+    "en": "Include speaker names in subtitles",
+    "fr": "Afficher les noms dans les sous-titres"
+  },
+  "Community-1 runs locally on CPU. Voices are anonymous until you name them.": {
+    "en": "Community-1 runs locally on CPU. Voices are anonymous until you name them.",
+    "fr": "Community-1 fonctionne localement sur CPU. Les voix restent anonymes jusqu’à leur renommage."
+  },
+  "Speaker identification · Community-1": {
+    "en": "Speaker identification · Community-1",
+    "fr": "Identification des voix · Community-1"
+  },
+  "Optional download. Its CPU runtime is isolated from Phonon and is not included in the base ZIP.": {
+    "en": "Optional download. Its CPU runtime is isolated from Phonon and is not included in the base ZIP.",
+    "fr": "Téléchargement facultatif. Son moteur CPU est isolé de Phonon et absent du ZIP de base."
+  },
+  "Runtime / model": {
+    "en": "Runtime / model",
+    "fr": "Moteur / modèle"
+  },
+  "Community-1 model and access conditions": {
+    "en": "Community-1 model and access conditions",
+    "fr": "Modèle Community-1 et conditions d’accès"
+  },
+  "Pyannote runtime license": {
+    "en": "Pyannote runtime license",
+    "fr": "Licence du moteur Pyannote"
+  },
+  "I reviewed the diarization runtime licenses": {
+    "en": "I reviewed the diarization runtime licenses",
+    "fr": "J’ai consulté les licences du moteur de diarisation"
+  },
+  "I accepted the Community-1 conditions on Hugging Face": {
+    "en": "I accepted the Community-1 conditions on Hugging Face",
+    "fr": "J’ai accepté les conditions de Community-1 sur Hugging Face"
+  },
+  "Install / repair speaker runtime": {
+    "en": "Install / repair speaker runtime",
+    "fr": "Installer / réparer le moteur de voix"
+  },
+  "Download / repair Community-1": {
+    "en": "Download / repair Community-1",
+    "fr": "Télécharger / réparer Community-1"
+  },
+  "Credential available": {
+    "en": "Credential available",
+    "fr": "Identifiant d’accès disponible"
+  },
+  "Hugging Face access": {
+    "en": "Hugging Face access",
+    "fr": "Accès Hugging Face"
+  },
+  "Use an existing Hugging Face login or save a read token in Windows Credential Manager. Tokens never enter generation configurations or MCP parameters.": {
+    "en": "Use an existing Hugging Face login or save a read token in Windows Credential Manager. Tokens never enter generation configurations or MCP parameters.",
+    "fr": "Utilisez une connexion Hugging Face existante ou enregistrez un jeton de lecture dans le gestionnaire d’identifiants Windows. Les jetons sont exclus des configurations et paramètres MCP."
+  },
+  "Hugging Face access token": {
+    "en": "Hugging Face access token",
+    "fr": "Jeton d’accès Hugging Face"
+  },
+  "Save protected credential": {
+    "en": "Save protected credential",
+    "fr": "Enregistrer l’identifiant protégé"
+  },
+  "Credential saved": {
+    "en": "Credential saved",
+    "fr": "Identifiant enregistré"
+  },
+  "Token settings": {
+    "en": "Token settings",
+    "fr": "Paramètres des jetons"
+  },
+  "Check Community-1 access": {
+    "en": "Check Community-1 access",
+    "fr": "Vérifier l’accès à Community-1"
+  },
+  "Local Community-1 model": {
+    "en": "Local Community-1 model",
+    "fr": "Modèle Community-1 local"
+  },
+  "Model directory": {
+    "en": "Model directory",
+    "fr": "Dossier du modèle"
+  },
+  "Register Community-1 folder": {
+    "en": "Register Community-1 folder",
+    "fr": "Référencer le dossier Community-1"
+  },
+  "Refresh speaker installation": {
+    "en": "Refresh speaker installation",
+    "fr": "Actualiser l’installation des voix"
+  },
+  "Speakers": {
+    "en": "Speakers",
+    "fr": "Locuteurs"
+  },
+  "Save speaker names": {
+    "en": "Save speaker names",
+    "fr": "Enregistrer les noms des locuteurs"
+  },
+  "No speaker analysis yet. Select the matching media, then identify its voices.": {
+    "en": "No speaker analysis yet. Select the matching media, then identify its voices.",
+    "fr": "Aucune analyse des voix. Sélectionnez le média correspondant, puis identifiez les voix."
+  },
+  "Rebuild captions at speaker changes": {
+    "en": "Rebuild captions at speaker changes",
+    "fr": "Recréer les répliques aux changements de voix"
+  },
+  "Rebuild replaces manual speech text and layout using original word timings. Sound captions remain.": {
+    "en": "Rebuild replaces manual speech text and layout using original word timings. Sound captions remain.",
+    "fr": "La reconstruction remplace les corrections manuelles du texte et de la disposition à partir des timings des mots. Les descriptions sonores sont conservées."
+  },
+  "Replace manual speaker assignments": {
+    "en": "Replace manual speaker assignments",
+    "fr": "Remplacer les attributions manuelles de locuteurs"
+  },
+  "Identify speakers in this document": {
+    "en": "Identify speakers in this document",
+    "fr": "Identifier les voix dans ce document"
+  },
+  "Install the optional speaker runtime and Community-1 model in Installation first.": {
+    "en": "Install the optional speaker runtime and Community-1 model in Installation first.",
+    "fr": "Installez d’abord le moteur de voix et le modèle Community-1 dans Installation."
+  },
+  "Identify different speakers": {
+    "en": "Identify different speakers",
+    "fr": "Identifier les différents locuteurs"
+  },
+  "Speaker identification": {
+    "en": "Speaker identification",
+    "fr": "Identification des voix"
+  },
+  "Unassigned": {
+    "en": "Unassigned",
+    "fr": "Non attribué"
+  },
+  "This caption spans more than one voice. Review the assignment or rebuild at speaker changes.": {
+    "en": "This caption spans more than one voice. Review the assignment or rebuild at speaker changes.",
+    "fr": "Cette réplique couvre plusieurs voix. Vérifiez son attribution ou reconstruisez-la aux changements de voix."
+  },
+  "Speaker analysis settings": {
+    "en": "Speaker analysis settings",
+    "fr": "Réglages de l’analyse des voix"
+  },
+  "Accessible": {
+    "en": "Accessible",
+    "fr": "Accessible"
+  },
+  "Model download: about 33 MB. The separate CPU runtime is substantially larger.": {
+    "en": "Model download: about 33 MB. The separate CPU runtime is substantially larger.",
+    "fr": "Modèle : environ 33 Mo. Le téléchargement séparé du moteur CPU est nettement plus volumineux."
+  },
+  "Configure a valid Hugging Face read token in Installation.": {
+    "en": "Configure a valid Hugging Face read token in Installation.",
+    "fr": "Configurez un jeton Hugging Face de lecture valide dans Installation."
+  },
+  "Enable access to public gated repositories in your Hugging Face read token permissions, then retry.": {
+    "en": "Enable access to public gated repositories in your Hugging Face read token permissions, then retry.",
+    "fr": "Autorisez l’accès aux dépôts publics à accès restreint dans les permissions de votre jeton Hugging Face, puis réessayez."
+  },
+  "Accept the Community-1 model conditions on Hugging Face, then retry with your read token.": {
+    "en": "Accept the Community-1 model conditions on Hugging Face, then retry with your read token.",
+    "fr": "Acceptez les conditions du modèle Community-1 sur Hugging Face, puis réessayez avec votre jeton de lecture."
   }
 }

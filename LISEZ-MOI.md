@@ -32,3 +32,5 @@ Version 0.3.0 : PyTorch, SymPy, NetworkX et mpmath ne sont plus inclus dans le Z
 Version 0.4.0 : interface CyUI avec navigation latérale, lecteur synchronisé, recherche dans les répliques et édition des timings. Cinq thèmes, deux densités et taille du texte dans Options. Anglais par défaut, français sélectionnable. PyTorch et modèles restent téléchargés séparément.
 
 Version 0.4.1 : correction du crash de prévisualisation avec certaines largeurs de capture. Déposez un fichier audio/vidéo ou un document JSON de sous-titres depuis l’Explorateur dans la fenêtre pour l’ouvrir.
+
+Version 0.5.0 : identification facultative des locuteurs avec Community-1, noms modifiables, attribution par réplique et exports avec noms. Installez séparément le moteur CPU et les poids dans Installation après acceptation des conditions Hugging Face. Aucun jeton dans les configurations ou paramètres MCP.

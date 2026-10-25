@@ -18,3 +18,8 @@ FFmpeg 7.1 (GPLv3 build supplied by imageio-ffmpeg 0.6.0):
 CyUI Python port (MIT), copyright (c) 2026 Cyberalien.
   Full license: CyUI-MIT.txt (also ../app/LICENCES/CyUI-MIT.txt)
   Vendored source and upstream fingerprint: ../app/cyui-source.json
+
+Optional Pyannote Audio 4.0.7 (MIT): https://github.com/pyannote/pyannote-audio
+Community-1 weights (CC-BY-4.0; downloaded separately): https://huggingface.co/pyannote/speaker-diarization-community-1
+Optional CPU runtime pins and wheel SHA256: ../app/diarization-runtime-lock.json
+Full notices of its dependencies remain in the optional installed runtime.

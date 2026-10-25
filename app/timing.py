@@ -13,7 +13,7 @@ def _text(cue):
 
 
 def _needs(cue, max_cps, min_duration):
-    return max(min_duration, len(cue["text"].replace("\n", ""))/max_cps+.002)
+    return max(min_duration, (len(cue.get("_speakerPrefix",""))+len(cue["text"].replace("\n", "")))/max_cps+.002)
 
 
 def _merge(cues, max_cps, min_duration, max_chars, max_lines, max_duration, pause):
@@ -29,7 +29,7 @@ def _merge(cues, max_cps, min_duration, max_chars, max_lines, max_duration, paus
             span=max(previous["end"],cue["end"])-previous["start"]
             short=min(previous["end"]-previous["start"],cue["end"]-cue["start"])<min_duration
             fast=any(_needs(x,max_cps,min_duration)>x["end"]-x["start"]+.003 for x in (previous,cue))
-            if gap<=pause and span<=max_duration and len(lines)<=max_lines and (gap<0 or short or fast):
+            if previous.get("speaker")==cue.get("speaker") and previous.get("speakerManual",False)==cue.get("speakerManual",False) and gap<=pause and span<=max_duration and len(lines)<=max_lines and (gap<0 or short or fast):
                 previous["text"]="\n".join(lines)
                 previous["end"]=max(previous["end"],cue["end"])
                 sources[previous["id"]].append(cue["id"])
@@ -88,6 +88,10 @@ def repair(document, max_cps=22., min_duration=.8, max_advance=.25, max_delay=.5
             "pause":pause,"merge_fragments":merge_fragments}
     sounds=[dict(c) for c in original["cues"] if c.get("kind")=="sound"]
     speech=[dict(c) for c in original["cues"] if c.get("kind","speech")=="speech"]
+    import speakers
+    for cue in speech:
+        name=speakers.name_for(original,cue.get("speaker")) if original.get("speakerLabels",True) else ""
+        cue["_speakerPrefix"]=("["+name+"] ") if name else ""
     previous_anchors=original.get("timingAnchors",{})
     for cue in speech:
         anchor=previous_anchors.get(cue["id"],{})
@@ -111,6 +115,7 @@ def repair(document, max_cps=22., min_duration=.8, max_advance=.25, max_delay=.5
         next_start=cues[last]["start"] if last<len(cues) else None
         repaired.extend(_solve(cues[first:last],max_cps,min_duration,max_advance,max_delay,max_extension,min_gap,media_end,next_start))
         first=last
+    for cue in repaired:cue.pop("_speakerPrefix",None)
     original_by_id={c["id"]:c for c in original["cues"]}
     changes=[];anchors={}
     for cue in repaired:

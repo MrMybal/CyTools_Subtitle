@@ -60,3 +60,16 @@ A real 1676×992 screen capture reproduced the preview failure: PyAV exposed RGB
 External file drops are connected to the existing bundled GLFW window, with callback lifetime and cleanup before window destruction. The callback queues UTF-8 paths for processing on a normal UI frame, through the same opener as the file picker. Windows tests verified the Explorer acceptance style and delivered actual WM_DROPFILES events to that window: video, an accented audio path, video with subtitle JSON, and a refused text file. Tests did not synthesize a mouse drag gesture. Files remain at their original locations, and dropping does not submit generation.
 
 The suite passed 30 tests, including four padded capture widths, first-frame and seek-frame packing, and invalid video error handling. No model or PyTorch dependency was added. Windows x64 was exercised; native drop integration on Linux/macOS remains unvalidated.
+
+
+## Optional speaker diarization — 0.5.0 (2026-10-25)
+
+The isolated Windows CPU runtime installed successfully from 95 pinned, hashed wheels. A fresh process imported Pyannote 4.0.7 with torch/torchaudio 2.8.0+cpu. The separate Phonon torch 2.14.1+cpu installation was preserved; a subsequent real Phonon transcription produced 26 words and 5 cues.
+
+The product suite passes 48 tests. Speaker coverage includes preservation of words/manual text/times/sounds, voice-change layout, visible-name reading speed, manual attribution, reduced-speaker reanalysis, local reference hashes and preflight, malformed metadata, missing access, authenticated license/permission checks, failed candidate activation and job scratch cleanup. The operation test uses a declared timeline worker fixture; it does not establish neural recognition accuracy.
+
+Actual Windows GUI jobs renamed people and changed a cue's speaker in English and French. A real MCP stdio session discovered the new operations, renamed a speaker, exported subtitles and finished its temporary task, verifying cleanup while preserving the exported files and original document. Installation and Options were rendered with the optional runtime present and model absent.
+
+The configured Hugging Face account currently refuses access until the user accepts Community-1 conditions. Real Community-1 inference, separation quality and processing speed remain unvalidated. See [Diarization](Diarization.md) for the execution contract and limits. No gated weights or optional runtime are included in the base release.
+
+A clean relocated 0.5.0 base package launched through its actual Windows EXE from a different working directory without torch, the optional diarization runtime or model weights. Its editor completed real rename/manual-assignment jobs, and its French Installation page rendered both missing-component states and guided installation controls.

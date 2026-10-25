@@ -394,7 +394,11 @@ def license_records():
 
 def dependency_records():
     records=[]
-    for dist in sorted(importlib.metadata.distributions(), key=lambda d:d.metadata.get('Name','').lower()):
+    import diarization
+    packages=list(importlib.metadata.distributions())
+    optional=diarization.active_runtime(ROOT)
+    if optional:packages.extend(importlib.metadata.distributions(path=[str(optional)]))
+    for dist in sorted(packages, key=lambda d:d.metadata.get('Name','').lower()):
         meta=dist.metadata
         license_name=meta.get('License-Expression') or meta.get('License')
         if not license_name:

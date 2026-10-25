@@ -1,4 +1,4 @@
-# CyTools_Subtitle 0.4.1
+# CyTools_Subtitle 0.5.0
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
@@ -10,7 +10,7 @@ The CyUI interface provides a sidebar workspace, resizable preview/inspector col
 
 The Windows portable release includes Python and media/UI dependencies; PyTorch is downloaded separately from Installation: extract the complete archive, then launch ../CyTools_Subtitle.exe. Source checkouts require install.ps1 first. English is the default; French is selectable in Options. Select an audio/video source and Generate subtitles. The player streams decoding off the UI thread, overlays active captions and supports pause/seek. Source and preview pixel dimensions are displayed. The editor changes individual cue text/start/end, shifts the track, adds sound captions and exports SRT/VTT/JSON. Reflow explicitly rebuilds speech from original word timings, replacing manual speech edits while preserving sound captions.
 
-Phonon-2 and Phonon-2.5 English: English only. Phonon-2.5: multilingual, including French. These models do not translate, diarize speakers or classify background sounds. CPU is the only integrated execution device; no unused GPU/LoRA controls. Voice filtering is highpass/lowpass plus FFT denoise, not neural vocal separation.
+Phonon-2 and Phonon-2.5 English: English only. Phonon-2.5: multilingual, including French. Phonon does not translate or classify background sounds. Speaker attribution is available through the optional Community-1 component. CPU is the only integrated execution device; no unused GPU/LoRA controls. Voice filtering is highpass/lowpass plus FFT denoise, not neural vocal separation.
 
 The model receives sequential bounded WAV windows, with overlap and word-midpoint ownership at boundaries. A window is deleted/reused rather than accumulating complete recording tensors. Transcription errors and boundary omissions/repetitions remain possible: review the result. Decoder timing uses native frame resolution; no timing precision or transcript completeness guarantee. Truncated inference fails explicitly and requests shorter windows.
 
@@ -72,3 +72,20 @@ Defaults: target 22 characters/second and 0.8 s display; at most 0.25 s advance,
 An isolated, bounded SciPy/HiGHS worker allocates reading time while respecting synchronization and media-end limits. Remaining reading-speed violations are reported rather than hidden by shifting text farther from the voice. Constraints can be adjusted explicitly. If automatic postprocessing cannot satisfy the constraints, transcription still publishes its raw result with a visible unresolved repair record; an explicit repair fails without changing its source file. No generic forced alignment or corrected transcription accuracy is claimed.
 
 A long-form French recording was repaired through real MCP in about 2.3 seconds without rerunning its 10-minute transcription: 629 cues -> 561, 102 reading-speed warnings -> 11, 2 overlaps -> 0. Every speech word and original word timestamp was preserved. The 11 remaining fast-dialogue cues require human review/condensed wording or an explicitly wider synchronization budget. The source recording and generated artifacts are not part of the distribution.
+
+
+## Optional speaker diarization (0.5.0)
+
+Community-1 attributes speech to anonymous speaker IDs. Phonon still supplies the text and original word timestamps. Enable **Identify different speakers** in generation, or open an existing JSON document in the editor and use **Speakers → Identify speakers in this document**. The editor lets you rename people and override the speaker of individual captions. Names are display labels; the software does not discover real identities or identify a person across unrelated recordings.
+
+In **Installation**, scroll to **Speaker identification · Community-1**. Install the optional CPU runtime, open the official model page, accept its Hugging Face conditions, then download the model. An existing Hugging Face login is reused. On Windows, a read token can alternatively be stored in Windows Credential Manager; never put tokens in MCP parameters, generation JSON or chat. The isolated runtime and weights are downloaded separately; they do not enlarge the base package or replace Phonon's PyTorch libraries.
+
+Generation options include a known speaker count (0 = automatic), minimum/maximum count, CPU threads, segmentation and embedding batch sizes, and a duration refusal limit of at most four hours. The waveform uses job-owned disk storage and model inference uses bounded batches. This limit does not certify accuracy, processing speed or memory use for every recording. Voices are analyzed globally rather than independently renumbered for each Phonon window.
+
+Existing-document analysis preserves manual text, times, sound captions and original words by default. **Rebuild captions at speaker changes** explicitly recreates speech from original words and can replace manual speech edits; sound captions remain. Timing repair does not merge different speakers. Manual speaker overrides survive re-analysis unless replacement is explicitly requested. Speaker labels can be hidden; visible names count towards reading-speed checks. A caption spanning multiple voices remains reviewable.
+
+The JSON document remains schemaVersion 1 with additive optional `speakers`, `diarization`, `speakerLabels` and per-cue attribution metadata. Exported SRT/VTT can include a plain `[Name]` prefix compatible with ordinary players; raw cue text and original words are stored unchanged. Speaker IDs are scoped to the analyzed recording.
+
+CLI/MCP operations: `diarization_status`, `check_diarization_access`, `install_diarization_runtime`, `install_diarization_model`, `register_diarization_model`, `diarize_subtitles`, and `rename_speakers`. Network installation/access operations require an authenticated network permission and install operations require explicit license review. Local model registration references an official compatible Community-1 bundle in place and hashes its files. All file inputs are automatically imported privately; export wanted outputs before FinishTask.
+
+CPU/Windows is the integrated diarization path. GPU execution, speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](Docs/Diarization.md) for the precise validation state.

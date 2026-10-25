@@ -65,5 +65,26 @@
     "name": "CyUI",
     "license": "MIT",
     "notes": "Copyright (c) 2026 Cyberalien. Full license: LICENCES/CyUI-MIT.txt. Vendored Python port; source fingerprint: app/cyui-source.json."
+  },
+  {
+    "kind": "Engine",
+    "name": "Pyannote Audio 4.0.7 (optional)",
+    "license": "MIT",
+    "url": "https://github.com/pyannote/pyannote-audio",
+    "notes": "Downloaded separately with an isolated CPU runtime. Full dependency notices stay inside that runtime."
+  },
+  {
+    "kind": "Model",
+    "name": "Pyannote Community-1 (optional)",
+    "license": "CC-BY-4.0",
+    "url": "https://huggingface.co/pyannote/speaker-diarization-community-1",
+    "notes": "Gated official download requires your Hugging Face account and explicit acceptance. No weights included in the application."
+  },
+  {
+    "kind": "Dependency",
+    "name": "PyTorch 2.8.0+cpu / torchaudio 2.8.0+cpu (optional diarization runtime)",
+    "license": "BSD-3-Clause",
+    "url": "https://github.com/pytorch/pytorch/blob/v2.8.0/LICENSE",
+    "notes": "Isolated from the Phonon runtime. Versions and wheel hashes are pinned in diarization-runtime-lock.json."
   }
 ]

@@ -3,12 +3,15 @@ import json
 from pathlib import Path
 import sys
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from imgui_bundle import hello_imgui, immvision, portable_file_dialogs as pfd
 from ui_common import imgui, run, configure_generation, tr
 from tool import APP, ROOT, create_runtime, model_records
 from preview import Player
 from file_drop import FileDrops
+from diarization_ui import Panel as SpeakerPanel, generation_options as speaker_options
+import speakers
 import subtitles
 import updates
 import runtime_components
@@ -32,18 +35,20 @@ def main():
     form=defaults();job=None;subtitle_job=None;message="";frames=0;dialog=None;dialog_kind="";loaded_job=""
     document=None;document_path="";selected=0;cue_text="";cue_start=0.;cue_end=1.;cue_kind=0
     offset=0.;export_folder="";accepted=False;model_status="";sound_text="";sound_duration=2.
+    speaker_panel=SpeakerPanel(ROOT);cue_speaker=""
     runtime_accepted=False;runtime_info=runtime_components.status(ROOT)
     pool=ThreadPoolExecutor(max_workers=2);future=None;future_kind="";player=Player()
     github=updates.read_settings().get("repository","");automatic=updates.read_settings().get("automaticCheck",False)
     test_installation='--ui-test-installation' in sys.argv
     test_repair='--ui-test-repair' in sys.argv
     test_preview='--ui-test-preview' in sys.argv
+    test_speakers='--ui-test-speakers' in sys.argv;speaker_test_phase=0
     test_started=time.monotonic();test_played=False
     test_media=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-media=')),None)
     test_drop='--ui-test-file-drop' in sys.argv
     drops=FileDrops();drop_count=0;preview_frames=0;render_error="";test_paused=False
     view='Workspace';search='';last_state=''
-    for flag,target in [('--ui-test-installation','Installation'),('--ui-test-repair','Subtitle editor'),('--ui-test-options','Options'),('--ui-test-logs','Application log'),('--ui-test-advanced','Advanced operations')]:
+    for flag,target in [('--ui-test-installation','Installation'),('--ui-test-repair','Subtitle editor'),('--ui-test-options','Options'),('--ui-test-logs','Application log'),('--ui-test-advanced','Advanced operations'),('--ui-test-speakers','Subtitle editor'),('--ui-test-speaker-installation','Installation')]:
         if flag in sys.argv:view=target
     view=next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ui-test-view=')),view)
     if test_preview:
@@ -53,6 +58,9 @@ def main():
     if test_repair:
         demo={"format":"cytools-subtitles","schemaVersion":1,"media":{"durationSeconds":10,"streams":[]},"words":[],"cues":[{"id":"demo-1","start":1,"end":1.1,"text":"Hello and welcome.","kind":"speech"},{"id":"demo-2","start":1.1,"end":1.25,"text":"Please come in.","kind":"speech"}]}
         document_path=str(ROOT/'data/reports/repair-ui-input.json');Path(document_path).write_text(json.dumps(demo),'utf-8');document=demo
+    if test_speakers:
+        document={'format':'cytools-subtitles','schemaVersion':1,'words':[], 'speakers':[{'id':'speaker-1','name':'Person 1'},{'id':'speaker-2','name':'Person 2'}],'cues':[{'id':'speaker-demo-1','start':1,'end':3,'text':'Hello and welcome.','kind':'speech','speaker':'speaker-1'},{'id':'speaker-demo-2','start':4,'end':6,'text':'Thank you for having me.','kind':'speech','speaker':'speaker-2'}]}
+        document_path=str(ROOT/'data/reports/speaker-ui-input.json');Path(document_path).parent.mkdir(parents=True,exist_ok=True);Path(document_path).write_text(json.dumps(document),'utf-8')
     image_params=immvision.ImageParams();image_params.show_options_button=False;image_params.show_image_info=False
     image_params.show_pixel_info=False;image_params.show_zoom_buttons=False;image_params.can_resize=False;image_params.pan_with_mouse=False;image_params.zoom_with_mouse_wheel=False;image_params.refresh_image=True;image_params.resize_keep_aspect_ratio=True
     runner=hello_imgui.RunnerParams();runner.app_window_params.window_title="CyTools_Subtitle"
@@ -64,7 +72,9 @@ def main():
     (ROOT/"data/settings").mkdir(parents=True,exist_ok=True)
     runner.ini_filename=str(ROOT/("data/reports/cyui-test.ini" if any(a.startswith(("--ui-test","--smoke-test")) for a in sys.argv) else "data/settings/imgui.ini"))
     Path(runner.ini_filename).parent.mkdir(parents=True,exist_ok=True)
-    with create_runtime(ROOT/"data/jobs") as runtime:
+    test_mode=any(a.startswith(("--ui-test","--smoke-test")) for a in sys.argv)
+    jobs_root=ROOT/("data/reports/ui-test-jobs-"+uuid.uuid4().hex if test_mode else "data/jobs")
+    with create_runtime(jobs_root) as runtime:
         actor=runtime.authenticate(runtime.create_client("ImGui",permissions=["network"])["token"])
         session=runtime.create_session(actor,temporary=False)["sessionId"]
         def submit(operation,parameters):
@@ -99,15 +109,17 @@ def main():
                 path.write_text(json.dumps({'hwnd':drops.native_window,'pid':os.getpid(),'error':drops.error}),'utf-8')
         runner.callbacks.post_init=lambda:(drops.install(),install_drop_test())
         def select_cue(index):
-            nonlocal selected,cue_start,cue_end,cue_text,cue_kind
-            selected=index
+            nonlocal selected,cue_start,cue_end,cue_text,cue_kind,cue_speaker
+            selected=index;cue_speaker=document["cues"][index].get("speaker") or ""
             cue=document["cues"][index];cue_start=cue["start"];cue_end=cue["end"];cue_text=cue["text"];cue_kind=int(cue.get("kind")=="sound")
         def repair_current():
             keys=("max_cps","min_duration","max_advance","max_delay","max_extension","min_gap","merge_fragments","max_chars","max_lines","max_duration","pause")
             submit("repair_subtitles",{"document":document_path,**{k:form[k] for k in keys}})
         def gui():
-            nonlocal drop_count,preview_frames,render_error,test_paused,view,search,last_state,job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
+            nonlocal speaker_test_phase,cue_speaker,drop_count,preview_frames,render_error,test_paused,view,search,last_state,job,subtitle_job,message,frames,dialog,loaded_job,document,document_path,selected,cue_text,cue_start,cue_end,cue_kind,offset,export_folder,accepted,model_status,future,future_kind,github,automatic,sound_text,sound_duration,test_played,runtime_accepted,runtime_info
             frames+=1
+            if test_speakers and frames==3:
+                submit('rename_speakers',{'document':document_path,'names':{'speaker-1':'Alice','speaker-2':'Bob'}});speaker_test_phase=1
             if frames==3 and test_media:open_path(test_media,'media')
             for batch in drops.poll():
                 # A project is one media file and optionally one subtitle document.
@@ -149,11 +161,22 @@ def main():
                         subtitle_job=job
                         document_path=output["document"];document=subtitles.validate(json.loads(Path(document_path).read_text("utf-8")))
                         if document["cues"]:select_cue(0)
+                    if job['operationId'] in ('diarization_status','install_diarization_runtime','install_diarization_model','register_diarization_model'):
+                        speaker_panel.refresh();ui_common._licenses=None
+                        if hasattr(ui_common,'_dependencies'):del ui_common._dependencies
+                    if job['operationId']=='check_diarization_access':speaker_panel.message=tr(output.get('message',output.get('state','')))
                     if job["operationId"]=="install_model":model_status=json.dumps(output,ensure_ascii=False)
                     if job["operationId"] in ("runtime_status","install_runtime"):
                         runtime_info=output;runtime_components.activate(ROOT)
                         ui_common._licenses=None
             active=bool(job and job["state"] not in ("Completed","Failed","Cancelled"))
+            if test_speakers and not active and job and job['state']=='Completed':
+                if speaker_test_phase==1:
+                    assert document['speakers'][0]['name']=='Alice'
+                    submit('edit_subtitles',{'document':document_path,'edits':[{'id':'speaker-demo-1','speaker':'speaker-2'}]});speaker_test_phase=2
+                elif speaker_test_phase==2 and frames>25:
+                    assert document['cues'][0]['speaker']=='speaker-2' and document['cues'][0]['speakerManual']
+                    runner.app_shall_exit=True
             # Keyboard actions are suppressed while typing into any field.
             io=imgui.get_io()
             if not io.want_text_input:
@@ -237,7 +260,7 @@ def main():
                         render_error=detail
                         imgui.dummy((max(1,width),max(1,height)))
                     if document:
-                        caption='\n'.join(c['text'] for c in document['cues'] if c['start']<=player.current_time()<c['end'])
+                        caption='\n'.join(speakers.display_text(document,c) for c in document['cues'] if c['start']<=player.current_time()<c['end'])
                         if caption:
                             size=imgui.calc_text_size(caption);x=origin.x+(width-size.x)/2;y=origin.y+height-size.y-cyui.dp(18)
                             draw=imgui.get_window_draw_list();p=cyui.palette()
@@ -273,7 +296,7 @@ def main():
                             imgui.table_next_row();imgui.table_next_column()
                             clicked,_=imgui.selectable(f"{cue['start']:.2f} → {cue['end']:.2f}##{cue['id']}",selected==i,imgui.SelectableFlags_.span_all_columns)
                             if clicked:select_cue(i);player.seek(cue['start'])
-                            imgui.table_next_column();imgui.text_wrapped(cue['text']);imgui.table_next_column();cyui.text_dim(tr('Sound' if cue.get('kind')=='sound' else 'Speech'))
+                            imgui.table_next_column();imgui.text_wrapped(speakers.display_text(document,cue));imgui.table_next_column();cyui.text_dim(tr('Sound' if cue.get('kind')=='sound' else 'Speech'))
                         imgui.end_table()
                 else:cyui.empty_state(tr('No subtitles yet'),tr('Generate phrase captions, then review their timing here.'),cyui.icon.document)
                 cyui.end_card()
@@ -285,12 +308,14 @@ def main():
                     if changed:form['model']=models[index]
                     cyui.property(tr('CPU threads'));_,form['threads']=imgui.slider_int('##quick-threads',form['threads'],1,32)
                     cyui.property(tr('Audio track (zero based)'));_,form['audio_stream']=imgui.slider_int('##quick-track',form['audio_stream'],0,31)
+                    cyui.property(tr('Identify different speakers'));_,form['diarization']=imgui.checkbox('##quick-diarization',form['diarization'])
                     cyui.end_properties()
+                if form['diarization'] and not speaker_panel.info['ready']:cyui.callout('warning',tr('Install the optional speaker runtime and Community-1 model in Installation first.'))
                 cyui.text_dim(tr('Phrase captions with original word timings.'))
                 if not runtime_info['ready']:
                     cyui.callout('warning',tr('PyTorch is not installed. Open Installation to download it before generating subtitles.'))
                     if cyui.button(label('Installation')):view='Installation'
-                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media']):
+                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media'] or (form['diarization'] and not speaker_panel.info['ready'])):
                     if cyui.primary_button(label('Generate subtitles'),size=(-1,0)):submit('transcribe',dict(form))
                 if cyui.button(label('All generation settings'),size=(-1,0)):view='Media & generation'
                 cyui.end_card()
@@ -298,7 +323,7 @@ def main():
                 if document and document['cues']:
                     cue=document['cues'][selected]
                     cyui.text_mono(f"{cue['start']:.3f} → {cue['end']:.3f}")
-                    imgui.text_wrapped(cue['text'])
+                    imgui.text_wrapped(speakers.display_text(document,cue))
                     if cyui.button(label('Edit caption and timing'),size=(-1,0)):view='Subtitle editor'
                 else:cyui.text_faint(tr('Select a caption to inspect it.'))
                 cyui.end_card()
@@ -410,7 +435,12 @@ def main():
                         cyui.end_properties()
                     imgui.text_wrapped(tr("Local models are referenced in place. Only compatible Phonon-2 family directories; LoRA is not supported by this engine."))
                     cyui.end_section()
-                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media']):
+                if cyui.begin_section(label('Speaker identification'),False):
+                    _,form['diarization']=imgui.checkbox('Identify different speakers',form['diarization'])
+                    speaker_options(form)
+                    if form['diarization'] and not speaker_panel.info['ready']:cyui.callout('warning',tr('Install the optional speaker runtime and Community-1 model in Installation first.'))
+                    cyui.end_section()
+                with cyui.scoped_disabled(active or not runtime_info['ready'] or not form['media'] or (form['diarization'] and not speaker_panel.info['ready'])):
                     if cyui.primary_button(label('Generate subtitles')):submit('transcribe',dict(form))
                 imgui.same_line()
                 with cyui.scoped_disabled(active or not form['media']):
@@ -445,7 +475,7 @@ def main():
                     cyui.begin_card('##editor-captions',tr('Subtitles'))
                     if imgui.begin_child("cue-list",(0,cyui.dp(420 if editor_wide else 200))):
                         for i,cue in enumerate(document["cues"]):
-                            clicked,_=imgui.selectable(f'{cue["start"]:.3f} -> {cue["end"]:.3f}  {cue["text"].replace(chr(10)," ")}##{cue["id"]}',selected==i)
+                            clicked,_=imgui.selectable(f'{cue["start"]:.3f} -> {cue["end"]:.3f}  {speakers.display_text(document,cue).replace(chr(10)," ")}##{cue["id"]}',selected==i)
                             if clicked:select_cue(i);player.seek(cue["start"])
                     imgui.end_child()
                     cyui.end_card()
@@ -468,8 +498,16 @@ def main():
                             cyui.property(tr('Cue type'))
                             _,cue_kind=imgui.combo("##Cue type",cue_kind,[tr("Speech"),tr("Sound description")])
                             cyui.end_properties()
+                        if document.get('speakers') and cyui.begin_properties('##cue-speaker'):
+                            cyui.property(tr('Speaker'))
+                            ids=['']+[item['id'] for item in document['speakers']]
+                            names=[tr('Unassigned')]+[item['name'] for item in document['speakers']]
+                            changed,index=imgui.combo('##cue-speaker-choice',ids.index(cue_speaker) if cue_speaker in ids else 0,names)
+                            if changed:cue_speaker=ids[index]
+                            cyui.end_properties()
+                        if len(document['cues'][selected].get('speakerCandidates',[]))>1:cyui.text_dim(tr('This caption spans more than one voice. Review the assignment or rebuild at speaker changes.'))
                         imgui.begin_disabled(active)
-                        if cyui.primary_button(label("Apply cue edit")):submit("edit_subtitles",{"document":document_path,"edits":[{"id":document["cues"][selected]["id"],"start":cue_start,"end":cue_end,"text":cue_text,"kind":["speech","sound"][cue_kind]}]})
+                        if cyui.primary_button(label("Apply cue edit")):submit("edit_subtitles",{"document":document_path,"edits":[{"id":document["cues"][selected]["id"],"start":cue_start,"end":cue_end,"text":cue_text,"kind":["speech","sound"][cue_kind],**({"speaker":cue_speaker or None} if document.get("speakers") else {})}]})
                         imgui.same_line()
                         if cyui.danger_button(label("Delete cue")):submit("edit_subtitles",{"document":document_path,"edits":[{"id":document["cues"][selected]["id"],"delete":True}]})
                         imgui.end_disabled()
@@ -501,6 +539,7 @@ def main():
                             start=player.current_time();submit("edit_subtitles",{"document":document_path,"edits":[{"id":"sound-"+uuid.uuid4().hex[:12],"start":start,"end":start+sound_duration,"text":sound_text,"kind":"sound"}]})
                         imgui.end_disabled()
                         cyui.end_section()
+                    speaker_panel.editor(document,document_path,form["media"],form,submit,active)
                     cyui.end_card()
                     if editor_wide:imgui.end_table()
                 else:
@@ -556,6 +595,8 @@ def main():
                         form["local_model"]=record["path"];form["model"]=record.get("model","phonon-2")
                 if model_status:imgui.text_wrapped(model_status)
                 cyui.end_card()
+                speaker_panel.installation(submit,active)
+                if "--ui-test-speaker-installation" in sys.argv and frames>3:imgui.set_scroll_here_y(1.0)
             elif view=='Updates':
                 cyui.begin_card('##updates',tr('GitHub updates'))
                 imgui.text_wrapped(tr("Configure the application GitHub repository. No public repository is assumed. Engine updates require a new tested runtime; model downloads are separate."))
@@ -593,6 +634,10 @@ def main():
         try:
             if automatic and github:future=pool.submit(updates.check)
             run(runner,shell=True)
+            if test_speakers:
+                from standalone_log import save_screenshot
+                save_screenshot(ROOT/('data/reports/speakers-'+preferences.values['language']+'.png'),hello_imgui.final_app_window_screenshot())
+                (ROOT/'data/reports/speakers-ui.json').write_text(json.dumps({'phase':speaker_test_phase,'speakers':document['speakers'],'cueSpeaker':document['cues'][0]['speaker'],'manual':document['cues'][0]['speakerManual']}),'utf-8')
             if test_media or test_drop:
                 from standalone_log import save_screenshot
                 frame=player.frame

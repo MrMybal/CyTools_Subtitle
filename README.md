@@ -17,7 +17,7 @@ Local subtitle generation from audio and video, with a Dear ImGui media player, 
 
 ## Windows portable download
 
-Download `CyTools_Subtitle-0.4.1-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
+Download `CyTools_Subtitle-0.5.0-windows-x64.zip` from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
 
 English is the default interface language; French is selectable in Options. Keep app/ and runtime/ next to the executable. Settings, models and outputs are created in data/. Private release downloads require a GitHub account with access to the repository. The in-app updater currently supports public release downloads; use the browser while this repository is private.
 
@@ -33,7 +33,7 @@ Open **CyTools_Subtitle.exe**, then use **Installation** to review the model lic
 
 The environment is created privately in runtime/python. Source checkouts exclude model weights, installed environments, caches and generated results. The source setup creates a venv and requires machine Python. The Windows portable release includes its own interpreter. PyTorch is installed separately through Installation.
 
-CPU inference is implemented and tested on Windows x64. The Linux installer/launcher is supplied but unvalidated; Linux/macOS status remains Unknown. GPU, neural vocal separation, translation, diarization and automatic environmental-sound classification are not implemented. Voice filtering is bandpass plus FFT denoise.
+CPU inference is implemented and tested on Windows x64. The Linux installer/launcher is supplied but unvalidated; Linux/macOS status remains Unknown. GPU, neural vocal separation, translation and automatic environmental-sound classification are not implemented. Optional Community-1 speaker diarization is described below. Voice filtering is bandpass plus FFT denoise.
 
 ## MCP and CLI
 
@@ -82,3 +82,20 @@ CyUI is MIT-licensed by Cyberalien; its full notice is in [LICENCES/CyUI-MIT.txt
 ## License
 
 Copyright (c) 2026 Cyberalien. CyTools_Subtitle is licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only). The bundled CyToolsCore SDK remains MIT. Engines, libraries and model weights retain their separate licenses, including Apache-2.0, CC-BY-4.0 and the relevant FFmpeg build licenses. See [LICENSE](LICENSE), [LICENCES](LICENCES/SOURCES.txt) and app/LICENCES.
+
+
+## Optional speaker diarization (0.5.0)
+
+Community-1 attributes speech to anonymous speaker IDs. Phonon still supplies the text and original word timestamps. Enable **Identify different speakers** in generation, or open an existing JSON document in the editor and use **Speakers → Identify speakers in this document**. The editor lets you rename people and override the speaker of individual captions. Names are display labels; the software does not discover real identities or identify a person across unrelated recordings.
+
+In **Installation**, scroll to **Speaker identification · Community-1**. Install the optional CPU runtime, open the official model page, accept its Hugging Face conditions, then download the model. An existing Hugging Face login is reused. On Windows, a read token can alternatively be stored in Windows Credential Manager; never put tokens in MCP parameters, generation JSON or chat. The isolated runtime and weights are downloaded separately; they do not enlarge the base package or replace Phonon's PyTorch libraries.
+
+Generation options include a known speaker count (0 = automatic), minimum/maximum count, CPU threads, segmentation and embedding batch sizes, and a duration refusal limit of at most four hours. The waveform uses job-owned disk storage and model inference uses bounded batches. This limit does not certify accuracy, processing speed or memory use for every recording. Voices are analyzed globally rather than independently renumbered for each Phonon window.
+
+Existing-document analysis preserves manual text, times, sound captions and original words by default. **Rebuild captions at speaker changes** explicitly recreates speech from original words and can replace manual speech edits; sound captions remain. Timing repair does not merge different speakers. Manual speaker overrides survive re-analysis unless replacement is explicitly requested. Speaker labels can be hidden; visible names count towards reading-speed checks. A caption spanning multiple voices remains reviewable.
+
+The JSON document remains schemaVersion 1 with additive optional `speakers`, `diarization`, `speakerLabels` and per-cue attribution metadata. Exported SRT/VTT can include a plain `[Name]` prefix compatible with ordinary players; raw cue text and original words are stored unchanged. Speaker IDs are scoped to the analyzed recording.
+
+CLI/MCP operations: `diarization_status`, `check_diarization_access`, `install_diarization_runtime`, `install_diarization_model`, `register_diarization_model`, `diarize_subtitles`, and `rename_speakers`. Network installation/access operations require an authenticated network permission and install operations require explicit license review. Local model registration references an official compatible Community-1 bundle in place and hashes its files. All file inputs are automatically imported privately; export wanted outputs before FinishTask.
+
+CPU/Windows is the integrated diarization path. GPU execution, speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](app/Docs/Diarization.md) for the precise validation state.

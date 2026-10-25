@@ -3,7 +3,7 @@
   "protocolVersion": "1.0",
   "id": "cy.tools.subtitle",
   "name": "CyTools_Subtitle",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Local Phonon subtitles with word timing, bounded audio processing, media preview and MCP editing.",
   "vendor": "Cyberalien",
   "author": "Cyberalien",
@@ -236,6 +236,54 @@
             "type": "boolean",
             "default": true,
             "description": "Combine nearby short/fast/overlapping speech cues when the line and duration bounds permit; retain every word."
+          },
+          "diarization": {
+            "type": "boolean",
+            "default": false,
+            "description": "Optional offline Community-1 CPU speaker attribution; requires separately installed runtime/model."
+          },
+          "speaker_count": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 32,
+            "description": "Known number of voices; 0 enables automatic counting and min/max bounds."
+          },
+          "min_speakers": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 32
+          },
+          "max_speakers": {
+            "type": "integer",
+            "default": 16,
+            "minimum": 1,
+            "maximum": 32
+          },
+          "diarization_max_seconds": {
+            "type": "integer",
+            "default": 14400,
+            "minimum": 1,
+            "maximum": 14400,
+            "description": "Refuse longer audio before diarization; this is a processing bound, not an accuracy or performance guarantee."
+          },
+          "segmentation_batch_size": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 16
+          },
+          "embedding_batch_size": {
+            "type": "integer",
+            "default": 8,
+            "minimum": 1,
+            "maximum": 64
+          },
+          "speaker_labels": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include speaker display names in preview and SRT/VTT without changing cue text."
           }
         },
         "required": [
@@ -294,7 +342,8 @@
       "canCancel": true,
       "supportsProgress": true,
       "exclusiveGroups": [
-        "phonon"
+        "phonon",
+        "speaker-diarization"
       ],
       "platforms": [
         {
@@ -582,6 +631,27 @@
                     "speech",
                     "sound"
                   ]
+                },
+                "speaker": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "speakerManual": {
+                  "type": "boolean"
+                },
+                "speakerCandidates": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32
+                },
+                "speakerOverlapFraction": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
                 }
               },
               "required": [
@@ -631,6 +701,15 @@
             "items": {
               "type": "object"
             }
+          },
+          "speakers": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "speakerLabels": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -724,6 +803,14 @@
                 },
                 "delete": {
                   "type": "boolean"
+                },
+                "speaker": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 64,
+                  "description": "Speaker registry ID, or null to clear. Marks a manual assignment."
                 }
               },
               "required": [
@@ -1813,6 +1900,934 @@
       "outputs": [],
       "exclusiveGroups": [
         "phonon"
+      ]
+    },
+    {
+      "id": "diarization_status",
+      "name": "Speaker diarization status",
+      "description": "Optional Community-1 CPU runtime/model state; no engine imports and no network.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "runtimeReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "runtimePath": {
+            "type": "string"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          },
+          "credentialAvailable": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "device": {
+            "type": "string",
+            "enum": [
+              "cpu"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "runtimeReady",
+          "modelReady",
+          "ready",
+          "runtimePath",
+          "modelPath",
+          "state",
+          "credentialAvailable",
+          "source",
+          "license",
+          "device"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 2147483648,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": []
+    },
+    {
+      "id": "check_diarization_access",
+      "name": "Check Community-1 access",
+      "description": "Check existing protected Hugging Face credentials against the gated official revision. No token parameter.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "Accessible",
+              "AccessRequired"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "Authentication",
+              "TokenPermissions",
+              "Conditions"
+            ]
+          }
+        },
+        "required": [
+          "state",
+          "source"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 2147483648,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [
+        "network"
+      ],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "install_diarization_runtime",
+      "name": "Install CPU diarization runtime",
+      "description": "Download pinned, hashed Pyannote CPU dependencies into an isolated candidate. Preserve the prior active runtime on failure.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "license_accepted": {
+            "type": "boolean",
+            "default": false
+          },
+          "repair": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "runtimeReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "runtimePath": {
+            "type": "string"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          },
+          "credentialAvailable": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "device": {
+            "type": "string",
+            "enum": [
+              "cpu"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "runtimeReady",
+          "modelReady",
+          "ready",
+          "runtimePath",
+          "modelPath",
+          "state",
+          "credentialAvailable",
+          "source",
+          "license",
+          "device"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 8589934592,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [
+        "network"
+      ],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "install_diarization_model",
+      "name": "Install Community-1 model",
+      "description": "Download the pinned official gated model after explicit conditions/license review. Uses protected local credentials; no token parameter.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "license_accepted": {
+            "type": "boolean",
+            "default": false
+          },
+          "repair": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "runtimeReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "runtimePath": {
+            "type": "string"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          },
+          "credentialAvailable": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "device": {
+            "type": "string",
+            "enum": [
+              "cpu"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "runtimeReady",
+          "modelReady",
+          "ready",
+          "runtimePath",
+          "modelPath",
+          "state",
+          "credentialAvailable",
+          "source",
+          "license",
+          "device"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 8589934592,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [
+        "network"
+      ],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "register_diarization_model",
+      "name": "Register local Community-1 model",
+      "description": "Reference an official compatible local bundle in place; verify its files and checkpoint configuration.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Local model directory; model reference, not an input artifact."
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "runtimeReady": {
+            "type": "boolean"
+          },
+          "modelReady": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "runtimePath": {
+            "type": "string"
+          },
+          "modelPath": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "Installed",
+              "Missing"
+            ]
+          },
+          "credentialAvailable": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          },
+          "license": {
+            "type": "string"
+          },
+          "device": {
+            "type": "string",
+            "enum": [
+              "cpu"
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "revision",
+          "runtimeReady",
+          "modelReady",
+          "ready",
+          "runtimePath",
+          "modelPath",
+          "state",
+          "credentialAvailable",
+          "source",
+          "license",
+          "device"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 2147483648,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "diarize_subtitles",
+      "name": "Identify subtitle speakers",
+      "description": "Analyze voices globally with local Community-1 and attach identities to a new subtitle bundle. Raw words and sound captions are preserved.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "media": {
+            "type": "string",
+            "minLength": 1,
+            "x-cy-kind": "File",
+            "description": "Source audio/video used for these subtitles. Absolute local paths are automatically imported privately."
+          },
+          "document": {
+            "type": "string",
+            "minLength": 1,
+            "x-cy-kind": "File",
+            "description": "Existing subtitle JSON; manual text and times are preserved unless rebuild is explicitly true. Absolute local paths are automatically imported privately."
+          },
+          "audio_stream": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 31,
+            "description": "Zero-based audio-track ordinal, independent of the global stream index."
+          },
+          "threads": {
+            "type": "integer",
+            "default": 4,
+            "minimum": 1,
+            "maximum": 32,
+            "description": "CPU threads applied to PyTorch for speaker analysis."
+          },
+          "speaker_count": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 32,
+            "description": "Known number of voices; 0 enables automatic counting and min/max bounds."
+          },
+          "min_speakers": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 32
+          },
+          "max_speakers": {
+            "type": "integer",
+            "default": 16,
+            "minimum": 1,
+            "maximum": 32
+          },
+          "diarization_max_seconds": {
+            "type": "integer",
+            "default": 14400,
+            "minimum": 1,
+            "maximum": 14400,
+            "description": "Refuse longer audio before diarization; this is a processing bound, not an accuracy or performance guarantee."
+          },
+          "segmentation_batch_size": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 16
+          },
+          "embedding_batch_size": {
+            "type": "integer",
+            "default": 8,
+            "minimum": 1,
+            "maximum": 64
+          },
+          "speaker_labels": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include speaker display names in preview and SRT/VTT without changing cue text."
+          },
+          "rebuild": {
+            "type": "boolean",
+            "default": false,
+            "description": "Rebuild speech from original word timings, splitting at voice changes. Replaces manual speech text/layout."
+          },
+          "replace_manual": {
+            "type": "boolean",
+            "default": false,
+            "description": "Replace manually assigned cue speakers."
+          },
+          "max_chars": {
+            "type": "integer",
+            "default": 42,
+            "minimum": 10,
+            "maximum": 100,
+            "description": "Maximum characters per line; long unbreakable words are preserved."
+          },
+          "max_lines": {
+            "type": "integer",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 4,
+            "description": "Maximum lines per speech cue."
+          },
+          "max_duration": {
+            "type": "number",
+            "default": 6,
+            "minimum": 0.5,
+            "maximum": 20,
+            "description": "Target maximum speech cue duration in seconds; a single word is never split."
+          },
+          "pause": {
+            "type": "number",
+            "default": 0.65,
+            "minimum": 0.1,
+            "maximum": 5,
+            "description": "Split speech after a silence gap of at least this many seconds."
+          }
+        },
+        "required": [
+          "media",
+          "document"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Versioned subtitle JSON, cues and original word timings. Absolute local paths accepted; automatically imported into the private task.",
+            "x-cy-kind": "File"
+          },
+          "srt": {
+            "type": "string",
+            "minLength": 1,
+            "description": "UTF-8 SubRip subtitles. Absolute local paths accepted; automatically imported into the private task.",
+            "x-cy-kind": "File"
+          },
+          "vtt": {
+            "type": "string",
+            "minLength": 1,
+            "description": "UTF-8 WebVTT subtitles. Absolute local paths accepted; automatically imported into the private task.",
+            "x-cy-kind": "File"
+          },
+          "cueCount": {
+            "type": "integer"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "document",
+          "srt",
+          "vtt",
+          "cueCount",
+          "warnings"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 6442450944,
+        "diskBytes": 2147483648,
+        "cpuThreads": 4
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "id": "srt",
+          "type": "File",
+          "mimeType": "application/x-subrip",
+          "fileExtension": ".srt",
+          "description": "UTF-8 SubRip subtitles; timing in seconds."
+        },
+        {
+          "id": "vtt",
+          "type": "File",
+          "mimeType": "text/vtt",
+          "fileExtension": ".vtt",
+          "description": "UTF-8 WebVTT subtitles."
+        },
+        {
+          "id": "document",
+          "type": "File",
+          "mimeType": "application/json",
+          "fileExtension": ".json",
+          "description": "cytools-subtitles v1; words, cues, source stream metadata and warnings."
+        }
+      ],
+      "exclusiveGroups": [
+        "speaker-diarization"
+      ]
+    },
+    {
+      "id": "rename_speakers",
+      "name": "Rename subtitle speakers",
+      "description": "Rename speaker display names and toggle labels without altering words, cue text or timing.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "type": "string",
+            "minLength": 1,
+            "x-cy-kind": "File",
+            "description": "Subtitle JSON with speaker registry. Absolute local paths are automatically imported privately."
+          },
+          "names": {
+            "type": "object",
+            "maxProperties": 32,
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          },
+          "show_labels": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "document",
+          "names"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Versioned subtitle JSON, cues and original word timings. Absolute local paths accepted; automatically imported into the private task.",
+            "x-cy-kind": "File"
+          },
+          "srt": {
+            "type": "string",
+            "minLength": 1,
+            "description": "UTF-8 SubRip subtitles. Absolute local paths accepted; automatically imported into the private task.",
+            "x-cy-kind": "File"
+          },
+          "vtt": {
+            "type": "string",
+            "minLength": 1,
+            "description": "UTF-8 WebVTT subtitles. Absolute local paths accepted; automatically imported into the private task.",
+            "x-cy-kind": "File"
+          },
+          "cueCount": {
+            "type": "integer"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "document",
+          "srt",
+          "vtt",
+          "cueCount",
+          "warnings"
+        ],
+        "additionalProperties": false
+      },
+      "resourceRequirements": {
+        "ramBytes": 536870912,
+        "diskBytes": 2147483648,
+        "cpuThreads": 1
+      },
+      "supportedBackends": [],
+      "permissions": [],
+      "canRunAsync": true,
+      "canCancel": true,
+      "supportsProgress": true,
+      "platforms": [
+        {
+          "os": "Windows",
+          "architecture": "x64",
+          "status": "Experimental",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "Linux",
+          "architecture": "x64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        },
+        {
+          "os": "macOS",
+          "architecture": "ARM64",
+          "status": "Unknown",
+          "computeBackends": [
+            "CPU"
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "id": "srt",
+          "type": "File",
+          "mimeType": "application/x-subrip",
+          "fileExtension": ".srt",
+          "description": "UTF-8 SubRip subtitles; timing in seconds."
+        },
+        {
+          "id": "vtt",
+          "type": "File",
+          "mimeType": "text/vtt",
+          "fileExtension": ".vtt",
+          "description": "UTF-8 WebVTT subtitles."
+        },
+        {
+          "id": "document",
+          "type": "File",
+          "mimeType": "application/json",
+          "fileExtension": ".json",
+          "description": "cytools-subtitles v1; words, cues, source stream metadata and warnings."
+        }
+      ],
+      "exclusiveGroups": [
+        "speaker-diarization"
       ]
     }
   ],

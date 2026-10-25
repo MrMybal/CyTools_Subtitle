@@ -27,7 +27,7 @@ Inventory source: fermion-research 0.2.14 installed CLI help, fermion/_speech en
 | Vocal source separation | Not claimed | Voice filter label | Implemented FFT denoise + bandpass, no neural separator model |
 | Sound classification / descriptions | Reviewer edits, kind=sound | Add sound description | MCP sound edit tested. Native Phonon cannot identify non-speech events; inspect excerpt for external listening/classification |
 | Forced alignment of arbitrary script | Not claimed | Cue text/start/end and shift | Manual/MCP retiming and original-word reflow available; no aligner model supplied |
-| Translation / diarization | Unavailable | None | No unsupported semantic capability advertised |
+| Translation | Unavailable | None | No translation model integrated |
 
 All business fields and invocation envelopes are exposed through Advanced operations. The simplified form additionally provides the common controls. Schema field count is not a claim of universal native capability coverage. JSON/SRT/VTT outputs are private, composable artifacts; MIME types and seconds units are declared in the manifest. Every input-file field is configured for task-owned automatic import. Model references and export destinations are not task inputs.
 
@@ -42,3 +42,24 @@ All business fields and invocation envelopes are exposed through Advanced operat
 | Private CPU dependency installation | install_runtime | License review / Download or repair PyTorch | Authenticated network permission; license_accepted, repair; fixed package pins, verified candidate activation |
 
 PyTorch and its specific math dependencies are absent from the Windows base archive. Model installation and optional runtime installation remain separate operations. Linux/macOS installation is not validated. See RuntimeInstallation.md and Validation.md.
+
+
+## Optional Community-1 speaker analysis (0.5.0)
+
+Native inventory: pyannote.audio 4.0.7 `Pipeline.from_pretrained` and `SpeakerDiarization.apply` signatures, packaged upstream sources and the official Community-1 model card. CPU PyTorch 2.8.0+cpu and torchaudio 2.8.0+cpu live in an isolated optional component; Phonon's runtime is unchanged.
+
+| Native capability | Tool operation / fields | Standalone | Validation |
+|---|---|---|---|
+| Global speaker and exclusive timelines | transcribe.diarization, diarize_subtitles | Generation toggle / Speakers | Controller, attribution and preservation tests; real weight access gated |
+| Known count / count bounds | speaker_count, min_speakers, max_speakers | Speaker analysis settings | Schema bounds and argument construction |
+| Segmentation / embedding batches | segmentation_batch_size, embedding_batch_size | Speaker analysis settings | Passed to pipeline; full inference awaits weight access |
+| CPU threads | threads | Existing threads setting | Applied to optional PyTorch worker |
+| Local checkpoint / offline inference | register_diarization_model; managed pinned model | Installation / local folder | Restricted config paths and SHA256 checks |
+| Credentials / gated download | check_diarization_access, install_diarization_model | Protected token field / official conditions link | Real gated HTTP refusal, no token in business schema |
+| Runtime installation | install_diarization_runtime | License review / install | Real hashed wheel installation and CPU import verified |
+| Manual voice/name corrections | edit_subtitles speaker, rename_speakers | Cue speaker / names | Real runtime and GUI jobs, export and cleanup |
+| Progress callback | No arbitrary callable input | Existing jobs/logs | Worker phase and native logs; not fabricated per-batch percentages |
+| GPU / multi-GPU | Excluded for this release | CPU explicitly shown | No GPU runtime path validated |
+| Training, custom classes, biometric embeddings | Excluded | None | Outside file subtitle attribution; no arbitrary Python classes or code parameters |
+
+All options are available in Advanced operations and generation configurations. Raw words and manual caption text are not overwritten by speaker attribution; explicit reflow/rebuild keeps its documented replacement behavior.

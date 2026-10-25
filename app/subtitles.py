@@ -36,6 +36,8 @@ def validate(document):
             raise ValueError("Cue text is empty or too long")
         if cue.get("kind", "speech") not in ("speech", "sound"):
             raise ValueError("Unknown cue kind")
+    from speakers import validate_metadata
+    validate_metadata(document)
     document["cues"].sort(key=lambda c: (c["start"], c["end"], c["id"]))
     return document
 
@@ -47,13 +49,13 @@ def layout(words, max_chars=42, max_lines=2, max_duration=6.0, pause=.65):
         text = " ".join(w["text"] for w in group)
         cues.append({"id": f"cue-{len(cues)+1:06d}", "start": group[0]["start"],
                      "end": max(group[-1]["end"], group[0]["start"]+.04),
-                     "text": "\n".join(textwrap.wrap(text, max_chars, break_long_words=False, break_on_hyphens=False)), "kind": "speech"})
+                     "text": "\n".join(textwrap.wrap(text, max_chars, break_long_words=False, break_on_hyphens=False)), "kind": "speech",**({"speaker":group[0]["speaker"]} if "speaker" in group[0] else {})})
         group.clear()
     for word in words:
         if group:
             candidate = " ".join(w["text"] for w in [*group, word])
             lines = textwrap.wrap(candidate, max_chars, break_long_words=False, break_on_hyphens=False)
-            if word["start"]-group[-1]["end"] >= pause or word["end"]-group[0]["start"] > max_duration or len(lines)>max_lines:
+            if word.get("speaker")!=group[-1].get("speaker") or word["start"]-group[-1]["end"] >= pause or word["end"]-group[0]["start"] > max_duration or len(lines)>max_lines:
                 emit()
         group.append(word)
         if word["text"].endswith((".", "?", "!")): emit()
@@ -74,7 +76,8 @@ def quality(document, max_cps=None):
     warnings, speech_end = [], 0.0
     for cue in document["cues"]:
         duration = cue["end"]-cue["start"]
-        if len(cue["text"].replace("\n", "")) / duration > max_cps:
+        from speakers import display_text
+        if len(display_text(document,cue).replace("\n", "")) / duration > max_cps:
             warnings.append({"cueId": cue["id"], "issue": "reading_speed", "seconds": duration})
         if cue.get("kind", "speech") == "speech":
             if cue["start"] < speech_end-.001:
@@ -91,7 +94,8 @@ def save(document, directory):
         blocks = []
         for i, cue in enumerate(document["cues"], 1):
             sep = "," if extension == "srt" else "."
-            text = cue["text"].replace("-->", "→").replace("<", "‹").replace(">", "›")
+            from speakers import display_text
+            text = display_text(document,cue).replace("-->", "→").replace("<", "‹").replace(">", "›")
             blocks.append(f'{i}\n{timestamp(cue["start"], sep)} --> {timestamp(cue["end"], sep)}\n{text}\n')
         path = directory/f"subtitles.{extension}"
         path.write_text(("WEBVTT\n\n" if extension=="vtt" else "")+"\n".join(blocks), encoding="utf-8")
@@ -115,7 +119,8 @@ def edit(document, edits, offset=0.0):
             if ident not in by_id and not all(k in change for k in ("start", "end", "text")):
                 raise ValueError("New cues require start, end and text")
             cue = by_id.setdefault(ident, {"id": ident, "kind": "sound"})
-            cue.update({k: v for k,v in change.items() if k in ("start","end","text","kind")})
+            cue.update({k: v for k,v in change.items() if k in ("start","end","text","kind","speaker")})
+            if "speaker" in change:cue["speakerManual"]=True
     result["cues"] = list(by_id.values())
     for cue in result["cues"]:
         cue["start"] += offset

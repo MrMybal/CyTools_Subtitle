@@ -12,6 +12,8 @@ from cytools_core.transports.cli import run_cli
 from cytools_core.workers import ProcessWorker
 import subtitles
 import runtime_components
+import diarization
+import speakers
 
 APP=Path(__file__).resolve().parent
 ROOT=APP.parent
@@ -57,19 +59,19 @@ def configure_environment():
 def create_runtime(data_dir, **options):
     configure_environment()
     runtime=Runtime(load_manifest(APP/"CyTool.json"),data_dir,**options)
-    runtime.configure_inputs(ROOT/"data/inputs", fields={"transcribe":["media"],"inspect_media":["media"],"read_subtitles":["document"],"edit_subtitles":["document"],"reflow_subtitles":["document"],"repair_subtitles":["document"]})
+    runtime.configure_inputs(ROOT/"data/inputs", fields={"transcribe":["media"],"inspect_media":["media"],"read_subtitles":["document"],"edit_subtitles":["document"],"reflow_subtitles":["document"],"repair_subtitles":["document"],"diarize_subtitles":["media","document"],"rename_speakers":["document"]})
     from cytools_core.shared_installation import register_operations
     register_operations(runtime,ROOT)
 
-    def worker(ctx, p, timeout=600):
-        unit=ProcessWorker([sys.executable,str(APP/"worker.py")],idle_timeout=timeout)
+    def worker(ctx, p, timeout=600, script="worker.py"):
+        unit=ProcessWorker([sys.executable,str(APP/script)],idle_timeout=timeout)
         runtime.register_worker(ctx.job_id+"-"+uuid.uuid4().hex,unit)
         try:
             response=unit.run(ctx,p)
             if not response["ok"]:
                 message=response["error"]
                 code="MissingDependency" if response.get("type")=="ModuleNotFoundError" else "InvalidTiming" if p.get("task")=="repair" else "BackendError"
-                if "401" in message or "403" in message: code="AccessRequired"
+                if response.get("type")=="PermissionError" or "401" in message or "403" in message: code="AccessRequired"
                 if any(t in message.lower() for t in ("no space left", "disk full", "errno 28")): code="InsufficientDisk"
                 raise CyToolError(code,message,recoverable=True)
             return response["result"]
@@ -127,7 +129,29 @@ def create_runtime(data_dir, **options):
             doc["timingRepair"]={"state":"Unresolved","error":str(exc)}
             return doc
 
+    def diarization_options(p):
+        if not p['speaker_count'] and p['min_speakers']>p['max_speakers']:raise CyToolError('InvalidParameters','Minimum speakers must not exceed maximum speakers')
+        return {'threads':p['threads'],'num_speakers':p['speaker_count'],'min_speakers':p['min_speakers'],'max_speakers':p['max_speakers'],'max_seconds':p['diarization_max_seconds'],'segmentation_batch_size':p['segmentation_batch_size'],'embedding_batch_size':p['embedding_batch_size']}
+
+    def require_diarization(ctx):
+        info=diarization.status(ROOT)
+        if not info['runtimeReady']:raise CyToolError('MissingDependency','Install the optional diarization runtime from Installation',recoverable=True)
+        if not info['modelReady']:raise CyToolError('ModelNotInstalled','Install or register Community-1 from Installation',recoverable=True)
+        record=diarization.model_record(ROOT)
+        try:diarization.verify_model(info['modelPath'],ctx.cancellation,metadata=record if record.get('files') else None)
+        except (OSError,ValueError,KeyError) as exc:raise CyToolError('InvalidModel',str(exc),recoverable=True) from exc
+
+    def analyze_speakers(ctx,audio,p,media_hash):
+        ctx.progress(95,currentStep='Identifying speakers with Community-1 (CPU)')
+        scratch=ctx.path('intermediates/diarization.float32')
+        try:
+            result=worker(ctx,{'task':'infer','root':str(ROOT),'audio':str(audio),'scratch':str(scratch),'options':diarization_options(p)},7200,script='diarization_worker.py')
+            result['mediaSha256']=media_hash
+            return result
+        finally:scratch.unlink(missing_ok=True)
+
     def transcribe(ctx,p):
+        if p["diarization"]:diarization_options(p);require_diarization(ctx)
         path=source(ctx,p,"media")
         model_path=p["local_model"] or model_records().get(p["model"],{}).get("path","")
         if not model_path or not Path(model_path).is_dir():
@@ -138,44 +162,56 @@ def create_runtime(data_dir, **options):
         except (OSError,ValueError) as exc:raise CyToolError("InvalidModel",str(exc),recoverable=True) from exc
         meta=worker(ctx,{"task":"probe","source":str(path)})
         duration=meta["durationSeconds"]
+        if p["diarization"] and duration>p["diarization_max_seconds"]:raise CyToolError("DurationLimit","Audio exceeds the configured diarization duration limit")
         if not 0<duration<=86400: raise CyToolError("InvalidMedia","Media duration must be known and between 0 and 24 hours")
         audio=ctx.path("intermediates/audio.wav")
-        ctx.progress(3,currentStep="Extracting 16 kHz audio")
-        worker(ctx,{"task":"extract","source":str(path),"destination":str(audio),"audio_stream":p["audio_stream"],"filter":p["filter"]},3600)
-        words, chunks=[],[]
-        with wave.open(str(audio),"rb") as full:
-            duration=full.getnframes()/16000
-            count=math.ceil(duration/p["chunk_seconds"])
-            for index in range(count):
-                ctx.cancellation.check()
-                core=index*p["chunk_seconds"]
-                left=max(0,core-p["overlap_seconds"]/2)
-                right=min(duration,core+p["chunk_seconds"]+p["overlap_seconds"]/2)
-                clip=ctx.path("intermediates/chunk.wav")
-                full.setpos(round(left*16000))
-                with wave.open(str(clip),"wb") as target:
-                    target.setparams((1,2,16000,0,"NONE","not compressed"))
-                    target.writeframes(full.readframes(round((right-left)*16000)))
-                ctx.progress(5+90*index/count,currentStep=f"Transcribing window {index+1}/{count}",currentStepIndex=index+1,stepCount=count)
-                output=worker(ctx,{"task":"infer","model_path":model_path,"audio":str(clip),"threads":p["threads"],"hotwords":p["hotwords"],"hotword_lambda":p["hotword_lambda"]})
-                chunks.append({"start":left,"end":right,"engine":output.get("engine"),"backend":output.get("backend")})
-                for word in output.get("words") or []:
-                    start=float(word["start"])+left
-                    end=float(word["end"])+left
-                    if not all(math.isfinite(t) for t in (start,end)) or end<start: raise CyToolError("InvalidTiming","Non-finite or reversed word timing from Phonon")
-                    center=(start+end)/2
-                    if not core<=center<min(duration,core+p["chunk_seconds"]): continue
-                    text=word.get("text",word.get("word",""))
-                    if text.strip(): words.append({"text":text,"start":round(max(left,start),3),"end":round(min(duration,max(end,start+.04)),3)})
-        words.sort(key=lambda w:w["start"])
-        # Ownership by word midpoint prevents overlap-window duplication; retain every accepted word.
-        doc={"format":"cytools-subtitles","schemaVersion":1,"model":p["model"],"device":"cpu","media":meta,"words":words,"chunks":chunks,"parameters":{k:v for k,v in p.items() if k not in ("media","local_model")},"cues":subtitles.layout(words,**{k:p[k] for k in ("max_chars","max_lines","max_duration","pause")})}
-        doc=apply_timing(ctx,doc,p,automatic=True)
-        result=publish(ctx,doc)
-        # Audio intermediates are not user outputs and must not grow on retained desktop jobs.
-        audio.unlink(missing_ok=True)
-        ctx.path("intermediates/chunk.wav").unlink(missing_ok=True)
-        return result
+        try:
+            ctx.progress(3,currentStep="Extracting 16 kHz audio")
+            worker(ctx,{"task":"extract","source":str(path),"destination":str(audio),"audio_stream":p["audio_stream"],"filter":p["filter"]},3600)
+            words, chunks=[],[]
+            with wave.open(str(audio),"rb") as full:
+                duration=full.getnframes()/16000
+                count=math.ceil(duration/p["chunk_seconds"])
+                for index in range(count):
+                    ctx.cancellation.check()
+                    core=index*p["chunk_seconds"]
+                    left=max(0,core-p["overlap_seconds"]/2)
+                    right=min(duration,core+p["chunk_seconds"]+p["overlap_seconds"]/2)
+                    clip=ctx.path("intermediates/chunk.wav")
+                    full.setpos(round(left*16000))
+                    with wave.open(str(clip),"wb") as target:
+                        target.setparams((1,2,16000,0,"NONE","not compressed"))
+                        target.writeframes(full.readframes(round((right-left)*16000)))
+                    ctx.progress(5+90*index/count,currentStep=f"Transcribing window {index+1}/{count}",currentStepIndex=index+1,stepCount=count)
+                    output=worker(ctx,{"task":"infer","model_path":model_path,"audio":str(clip),"threads":p["threads"],"hotwords":p["hotwords"],"hotword_lambda":p["hotword_lambda"]})
+                    chunks.append({"start":left,"end":right,"engine":output.get("engine"),"backend":output.get("backend")})
+                    for word in output.get("words") or []:
+                        start=float(word["start"])+left
+                        end=float(word["end"])+left
+                        if not all(math.isfinite(t) for t in (start,end)) or end<start: raise CyToolError("InvalidTiming","Non-finite or reversed word timing from Phonon")
+                        center=(start+end)/2
+                        if not core<=center<min(duration,core+p["chunk_seconds"]): continue
+                        text=word.get("text",word.get("word",""))
+                        if text.strip(): words.append({"text":text,"start":round(max(left,start),3),"end":round(min(duration,max(end,start+.04)),3)})
+            words.sort(key=lambda w:w["start"])
+            # Ownership by word midpoint prevents overlap-window duplication; retain every accepted word.
+            doc={"format":"cytools-subtitles","schemaVersion":1,"model":p["model"],"device":"cpu","media":meta,"words":words,"chunks":chunks,"parameters":{k:v for k,v in p.items() if k not in ("media","local_model")},"cues":subtitles.layout(words,**{k:p[k] for k in ("max_chars","max_lines","max_duration","pause")})}
+            if p['diarization']:
+                # Use unfiltered audio for voice identity; voice filtering can alter timbre.
+                identity_audio=audio
+                if p['filter']!='none':
+                    identity_audio=ctx.path('intermediates/voices.wav')
+                    worker(ctx,{'task':'extract','source':str(path),'destination':str(identity_audio),'audio_stream':p['audio_stream'],'filter':'none'},3600)
+                analysis=analyze_speakers(ctx,identity_audio,p,diarization.hash_file(path,ctx.cancellation))
+                doc=speakers.attach(doc,analysis,rebuild=True,layout_options={k:p[k] for k in ('max_chars','max_lines','max_duration','pause')})
+                doc['speakerLabels']=p['speaker_labels']
+                if identity_audio!=audio:identity_audio.unlink(missing_ok=True)
+            doc=apply_timing(ctx,doc,p,automatic=True)
+            result=publish(ctx,doc)
+            return result
+        finally:
+            for name in ('audio.wav','chunk.wav','voices.wav','diarization.float32'):
+                ctx.path('intermediates/'+name).unlink(missing_ok=True)
 
     def read_subtitles(ctx,p):
         doc=document(ctx,p)
@@ -183,7 +219,7 @@ def create_runtime(data_dir, **options):
         cues=[c for c in doc["cues"] if c["end"]>p["start"] and c["start"]<p["end"]]
         words=[w for w in doc.get("words",[]) if w["end"]>p["start"] and w["start"]<p["end"]]
         ctx.progress(100,currentStep="Read")
-        return {"cues":cues[p["offset"]:p["offset"]+p["limit"]],"total":len(cues),"words":words[p["offset"]:p["offset"]+p["limit"]],"totalWords":len(words),"warnings":subtitles.quality(doc)}
+        return {"cues":cues[p["offset"]:p["offset"]+p["limit"]],"total":len(cues),"words":words[p["offset"]:p["offset"]+p["limit"]],"totalWords":len(words),"warnings":subtitles.quality(doc),"speakers":doc.get("speakers",[]),"speakerLabels":doc.get("speakerLabels",True)}
 
     def edit_subtitles(ctx,p):
         try: return publish(ctx,subtitles.edit(document(ctx,p),p["edits"],p["offset_seconds"]))
@@ -193,12 +229,13 @@ def create_runtime(data_dir, **options):
         doc=document(ctx,p)
         if not doc.get("words"): raise CyToolError("MissingWordTimings","Document has no original word timestamps")
         sounds=[c for c in doc["cues"] if c.get("kind")=="sound"]
-        speech=subtitles.layout(doc["words"],**{k:p[k] for k in ("max_chars","max_lines","max_duration","pause")})
+        speech=subtitles.layout(speakers.attributed_words(doc) if doc.get("diarization") else doc["words"],**{k:p[k] for k in ("max_chars","max_lines","max_duration","pause")})
         # Avoid collisions with IDs selected by clients for added sound captions.
         sound_ids={c["id"] for c in sounds}
         for cue in speech:
             while cue["id"] in sound_ids: cue["id"]="reflow-"+cue["id"]
         doc["cues"]=speech+sounds
+        if doc.get("diarization"):speakers.label_cues(doc)
         doc.pop("timingRepair",None);doc.pop("timingPolicy",None);doc.pop("timingAnchors",None)
         return publish(ctx,apply_timing(ctx,doc,p,automatic=True))
 
@@ -282,6 +319,69 @@ def create_runtime(data_dir, **options):
             return value
         finally:lock.release()
 
+    def diarization_status(ctx,p):
+        return diarization.status(ROOT)
+
+    def check_diarization_access(ctx,p):
+        return worker(ctx,{'task':'access'},60,script='diarization_worker.py')
+
+    def install_diarization(ctx,p,kind):
+        if not p['license_accepted']:raise CyToolError('LicenseAcceptanceRequired','Review the Community-1 conditions and component licenses in Installation',recoverable=True)
+        if kind=='runtime' and sys.platform!='win32':raise CyToolError('UnsupportedPlatform','Guided diarization runtime installation currently supports Windows only')
+        info=diarization.status(ROOT)
+        if info[kind+'Ready'] and not p['repair']:return info
+        from filelock import FileLock,Timeout
+        base=ROOT/('runtime/components/diarization' if kind=='runtime' else 'data/models/diarization');base.mkdir(parents=True,exist_ok=True)
+        lock=FileLock(str(base/'install.lock'))
+        while True:
+            ctx.cancellation.check()
+            try:lock.acquire(timeout=0);break
+            except Timeout:ctx.cancellation.sleep(.1)
+        try:
+            ctx.progress(5,currentStep='Installing optional speaker '+kind)
+            value=worker(ctx,{'task':'install_'+kind,'root':str(ROOT),'destination':str(base/uuid.uuid4().hex)},3600,script='diarization_worker.py')
+            if kind=='model':
+                registry=ROOT/'data/settings/diarization.json';registry.parent.mkdir(parents=True,exist_ok=True)
+                tmp=registry.with_suffix('.'+uuid.uuid4().hex+'.tmp');tmp.write_text(json.dumps(value,indent=2),'utf-8');tmp.replace(registry)
+            ctx.progress(100,currentStep='Speaker '+kind+' ready')
+            return diarization.status(ROOT)
+        finally:lock.release()
+
+    def install_diarization_runtime(ctx,p):return install_diarization(ctx,p,'runtime')
+    def install_diarization_model(ctx,p):return install_diarization(ctx,p,'model')
+
+    def register_diarization_model(ctx,p):
+        try:
+            directory=Path(p['path']).resolve()
+            manifest={'model':diarization.MODEL,'revision':'local','files':{name:diarization.hash_file(directory/name,ctx.cancellation) for name in diarization.FILES}}
+            value=diarization.verify_model(directory,ctx.cancellation,metadata=manifest)
+        except (OSError,ValueError,KeyError) as exc:raise CyToolError('InvalidModel',str(exc)) from exc
+        registry=ROOT/'data/settings/diarization.json';registry.parent.mkdir(parents=True,exist_ok=True)
+        tmp=registry.with_suffix('.'+uuid.uuid4().hex+'.tmp');tmp.write_text(json.dumps(value,indent=2),'utf-8');tmp.replace(registry)
+        return diarization.status(ROOT)
+
+    def diarize_subtitles(ctx,p):
+        options=diarization_options(p);require_diarization(ctx)
+        doc=document(ctx,p);path=source(ctx,p,'media');meta=worker(ctx,{'task':'probe','source':str(path)})
+        if meta['durationSeconds']>options['max_seconds']:raise CyToolError('DurationLimit','Audio exceeds the configured diarization duration limit')
+        original_duration=doc.get('media',{}).get('durationSeconds')
+        if original_duration and abs(original_duration-meta['durationSeconds'])>1:raise CyToolError('MediaMismatch','Selected media duration does not match this subtitle document')
+        source_hash=diarization.hash_file(path,ctx.cancellation)
+        previous_hash=doc.get('diarization',{}).get('mediaSha256')
+        if previous_hash and previous_hash!=source_hash:raise CyToolError('MediaMismatch','Selected media is different from the previously analyzed recording')
+        audio=ctx.path('intermediates/voices.wav')
+        try:
+            worker(ctx,{'task':'extract','source':str(path),'destination':str(audio),'audio_stream':p['audio_stream'],'filter':'none'},3600)
+            analysis=analyze_speakers(ctx,audio,p,source_hash)
+            doc=speakers.attach(doc,analysis,rebuild=p['rebuild'],layout_options={k:p[k] for k in ('max_chars','max_lines','max_duration','pause')},replace_manual=p['replace_manual'])
+            doc['speakerLabels']=p['speaker_labels']
+            return publish(ctx,doc)
+        finally:audio.unlink(missing_ok=True)
+
+    def rename_speakers(ctx,p):
+        try:return publish(ctx,speakers.rename(document(ctx,p),p['names'],p['show_labels']))
+        except (ValueError,KeyError,TypeError) as exc:raise CyToolError('InvalidEdit',str(exc)) from exc
+
     def estimate(p,backend,model):
         # Conservative 4 GiB CPU model envelope, plus input copies and up to 24h PCM.
         size=0
@@ -290,7 +390,12 @@ def create_runtime(data_dir, **options):
             if not candidate.is_absolute(): candidate=ROOT/"data/inputs"/candidate
             try: size=candidate.stat().st_size
             except OSError: pass
-        return {"ramBytes":4*1024**3,"diskBytes":size*2+3*1024**3,"cpuThreads":p.get("threads",4)}
+        return {"ramBytes":(6 if p.get("diarization") else 4)*1024**3,"diskBytes":size*2+(5 if p.get("diarization") else 3)*1024**3,"cpuThreads":p.get("threads",4)}
+
+    def estimate_diarization(p,backend,model):
+        resources=estimate(p,backend,model)
+        resources['ramBytes']=6*1024**3;resources['diskBytes']+=2*1024**3
+        return resources
 
     def estimate_input(p,backend,model):
         candidate=Path(p.get("media",p.get("document","")))
@@ -299,8 +404,8 @@ def create_runtime(data_dir, **options):
         except OSError:size=0
         return {"ramBytes":512*1024**2,"diskBytes":size*2+128*1024**2,"cpuThreads":1}
 
-    for name,handler in (("transcribe",transcribe),("inspect_media",inspect_media),("read_subtitles",read_subtitles),("edit_subtitles",edit_subtitles),("reflow_subtitles",reflow_subtitles),("repair_subtitles",repair_subtitles),("model_status",status),("install_model",install),("register_local_model",register_local),("runtime_status",runtime_status),("install_runtime",install_runtime)):
-        runtime.register(name,handler,**({"estimate":estimate} if name=="transcribe" else {"estimate":estimate_input} if name in ("inspect_media","read_subtitles","edit_subtitles","reflow_subtitles","repair_subtitles") else {}))
+    for name,handler in (("transcribe",transcribe),("inspect_media",inspect_media),("read_subtitles",read_subtitles),("edit_subtitles",edit_subtitles),("reflow_subtitles",reflow_subtitles),("repair_subtitles",repair_subtitles),("model_status",status),("install_model",install),("register_local_model",register_local),("runtime_status",runtime_status),("install_runtime",install_runtime),("diarization_status",diarization_status),("check_diarization_access",check_diarization_access),("install_diarization_runtime",install_diarization_runtime),("install_diarization_model",install_diarization_model),("register_diarization_model",register_diarization_model),("diarize_subtitles",diarize_subtitles),("rename_speakers",rename_speakers)):
+        runtime.register(name,handler,**({"estimate":estimate_diarization} if name=="diarize_subtitles" else {"estimate":estimate} if name=="transcribe" else {"estimate":estimate_input} if name in ("inspect_media","read_subtitles","edit_subtitles","reflow_subtitles","repair_subtitles","rename_speakers") else {}))
     return runtime
 
 
