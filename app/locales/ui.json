@@ -9306,5 +9306,81 @@
   "Transcription": {
     "en": "Transcription",
     "fr": "Transcription"
+  },
+  "Undo": {
+    "en": "Undo",
+    "fr": "Annuler"
+  },
+  "Redo": {
+    "en": "Redo",
+    "fr": "Rétablir"
+  },
+  "Undo (Ctrl+Z)": {
+    "en": "Undo (Ctrl+Z)",
+    "fr": "Annuler (Ctrl+Z)"
+  },
+  "Redo (Ctrl+Y)": {
+    "en": "Redo (Ctrl+Y)",
+    "fr": "Rétablir (Ctrl+Y)"
+  },
+  "Command palette": {
+    "en": "Command palette",
+    "fr": "Palette de commandes"
+  },
+  "Command palette (Ctrl+Shift+P)": {
+    "en": "Command palette (Ctrl+Shift+P)",
+    "fr": "Palette de commandes (Ctrl+Maj+P)"
+  },
+  "Fit timeline": {
+    "en": "Fit timeline",
+    "fr": "Ajuster la timeline"
+  },
+  "Wheel: zoom · Shift+wheel: pan · Drag edges: trim · Esc: cancel": {
+    "en": "Wheel: zoom · Shift+wheel: pan · Drag edges: trim · Esc: cancel",
+    "fr": "Molette : zoom · Maj+molette : déplacer · Bords : découper · Échap : annuler"
+  },
+  "Files": {
+    "en": "Files",
+    "fr": "Fichiers"
+  },
+  "Editing": {
+    "en": "Editing",
+    "fr": "Édition"
+  },
+  "Views": {
+    "en": "Views",
+    "fr": "Vues"
+  },
+  "JSON syntax preview": {
+    "en": "JSON syntax preview",
+    "fr": "Aperçu de la syntaxe JSON"
+  },
+  "Select a row to copy its text. Copy entire log includes the complete file.": {
+    "en": "Select a row to copy its text. Copy entire log includes the complete file.",
+    "fr": "Sélectionnez une ligne pour copier son texte. Copier le journal entier inclut tout le fichier."
+  },
+  "Raw log text": {
+    "en": "Raw log text",
+    "fr": "Texte brut du journal"
+  },
+  "Zoom in to edit this dense subtitle range (more than 3,000 visible captions).": {
+    "en": "Zoom in to edit this dense subtitle range (more than 3,000 visible captions).",
+    "fr": "Zoomez pour modifier cette zone dense (plus de 3 000 sous-titres visibles)."
+  },
+  "Copy result": {
+    "en": "Copy result",
+    "fr": "Copier le résultat"
+  },
+  "Wheel: zoom · Shift+wheel: pan · Ctrl+wheel: lanes · Drag edges: trim · Esc: cancel": {
+    "en": "Wheel: zoom · Shift+wheel: pan · Ctrl+wheel: lanes · Drag edges: trim · Esc: cancel",
+    "fr": "Molette : zoom · Maj : déplacer · Ctrl : pistes · Bords : découper · Échap : annuler"
+  },
+  "The result was saved, but the open document changed during processing.": {
+    "en": "The result was saved, but the open document changed during processing.",
+    "fr": "Le résultat est sauvegardé, mais le document ouvert a changé pendant le traitement."
+  },
+  "Selectable JSON text": {
+    "en": "Selectable JSON text",
+    "fr": "Texte JSON sélectionnable"
   }
 }

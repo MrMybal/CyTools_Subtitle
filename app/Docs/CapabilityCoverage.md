@@ -1,4 +1,4 @@
-# Native capability coverage — CyTools_Subtitle 0.6.0
+# Native capability coverage — CyTools_Subtitle 0.7.0
 
 Inventory source: fermion-research 0.2.14 installed CLI help, fermion/_speech engine implementation, https://github.com/fermionresearch/phonon/blob/main/docs/cli.md and https://www.fermionresearch.com/docs/speech/. Scope: local file transcription and subtitle authoring. Status below distinguishes actual execution from available code.
 
@@ -84,3 +84,7 @@ Inventory: official NeMo-Speech.cpp v0.2.0 CLI help/configuration and native dia
 | Other native ASR/translation/server functions | Excluded | None | Outside this optional voice-attribution component |
 
 The same public schemas serve MCP and desktop. Run-time diagnostics, immutable words, renamed/manual voices, exports and task cleanup use the existing composable document contract. See [NVIDIA guide](NvidiaDiarization.md).
+
+## Modular interface (0.7.0)
+
+Core, Timeline, Inspector, Images, Diagnostics, Commands and Code/Python CodeEditor replace the covered local presentation. Canvas is their selected dependency. Engine decoding, validation, job operations and Undo history remain application-owned. No new model capability or platform support is declared. See [CyUIMigration.md](CyUIMigration.md) for the exact selection and validation evidence.

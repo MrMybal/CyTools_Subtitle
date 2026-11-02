@@ -77,7 +77,7 @@ Version 0.4.1 fixes a video preview crash on captures with padded RGB image rows
 
 Version 0.4.0 uses CyUI with a sidebar, synchronized player, searchable phrase captions and an inspector for edits. Choose Mid Grey, Light Grey, Amber Night, Violet or Navy in Options, with compact/comfortable density and text scaling. English remains the default, with French selectable. PyTorch and models are still separate downloads.
 
-CyUI is MIT-licensed by Cyberalien; its full notice is in [LICENCES/CyUI-MIT.txt](LICENCES/CyUI-MIT.txt). Application code remains AGPL-3.0-only. The vendored Python source fingerprint and binding compatibility adjustment are documented in app/cyui-source.json.
+CyUI is MIT-licensed by Cyberalien; its full notice is in [LICENCES/CyUI-MIT.txt](LICENCES/CyUI-MIT.txt). Application code remains AGPL-3.0-only. The selected unmodified Python modules and their pinned revision/hashes are documented in app/cyui-source.json.
 
 ## License
 
@@ -109,3 +109,9 @@ In **Installation**, open **Speaker identification · NVIDIA Nemotron 3**, revie
 Enable **Identify different speakers**, select **NVIDIA Nemotron 3**, then CPU or CUDA. This changes voice attribution; Phonon still transcribes and supplies word timestamps. The default chunked quality preset retains global voice state; full attention is limited to six minutes. NVIDIA detects up to eight anonymous voices automatically. The settings and native segmentation thresholds are also available through MCP and versioned generation configurations.
 
 The editor shows the actual voice-analysis device and unassigned captions. Changing models creates new anonymous identities; replacing existing manual speaker assignments requires an explicit choice. Existing text and times remain intact unless caption rebuilding is requested. See [NVIDIA installation, options and limits](app/Docs/NvidiaDiarization.md) and [validation evidence](app/Docs/Validation.md). The tested natural dialogue showed better main-turn separation, with some speech still unassigned; no general quality guarantee is implied.
+
+## Modular CyUI interface (0.7.0)
+
+The subtitle timeline now uses the shared CyUI Timeline module: seek on the ruler, zoom with the wheel, pan with Shift+wheel, scroll voice lanes with Ctrl+wheel and drag clips/edges to move/trim. Escape cancels a gesture. The common Inspector validates caption drafts; Apply creates one correction. Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) restores document versions outside text entry. Ctrl+Shift+P opens the command palette.
+
+Video preview uses CyUI Images with fit/zoom/pan. Diagnostics adds severity/search/follow and copy-visible controls while retaining full selectable log text and full-file copy. Advanced operations uses the shared JSON editor/syntax viewer. Existing business parameters, word evidence, model installations and MCP contracts are preserved. English/French, five themes and both densities remain available. See [migration details and validation](app/Docs/CyUIMigration.md).

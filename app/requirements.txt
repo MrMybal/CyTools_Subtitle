@@ -1,3 +1,4 @@
+# CyUI 1.2.0 is vendored selectively; verify app/cyui-source.json with app/sync_cyui.py.
 cytools-core[mcp]==0.10.1
 fermion-research==0.2.14
 imgui-bundle==1.93.0

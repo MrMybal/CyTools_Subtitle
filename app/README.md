@@ -1,4 +1,4 @@
-# CyTools_Subtitle 0.6.0
+# CyTools_Subtitle 0.7.0
 
 Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.10.1 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
@@ -99,3 +99,9 @@ Install this optional engine separately in Installation after reviewing and expl
 Operations: `nemotron_status`, `nemotron_diagnostics`, `install_nemotron_runtime`, `install_nemotron_model`, `register_nemotron_model`. Use `diarization_engine: "nemotron3"` with `transcribe` or `diarize_subtitles`. Installation requires authenticated network permission and `license_accepted: true`; defaults do not accept terms. Both the selected runtime and the official pinned Q8_0 GGUF must be ready. Existing local weights can be referenced without moving them.
 
 All NVIDIA mode, preset, custom geometry, segmentation and device fields are exposed through generation settings/configuration and the operation schemas. Community-1 count/batch settings must remain at their default values when using NVIDIA. A configuration load never starts inference. [NvidiaDiarization.md](Docs/NvidiaDiarization.md) describes limits, output metadata and evidence.
+
+## Modular CyUI interface (0.7.0)
+
+The subtitle timeline now uses the shared CyUI Timeline module: seek on the ruler, zoom with the wheel, pan with Shift+wheel, scroll voice lanes with Ctrl+wheel and drag clips/edges to move/trim. Escape cancels a gesture. The common Inspector validates caption drafts; Apply creates one correction. Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) restores document versions outside text entry. Ctrl+Shift+P opens the command palette.
+
+Video preview uses CyUI Images with fit/zoom/pan. Diagnostics adds severity/search/follow and copy-visible controls while retaining full selectable log text and full-file copy. Advanced operations uses the shared JSON editor/syntax viewer. Existing business parameters, word evidence, model installations and MCP contracts are preserved. English/French, five themes and both densities remain available. See [migration details and validation](Docs/CyUIMigration.md).

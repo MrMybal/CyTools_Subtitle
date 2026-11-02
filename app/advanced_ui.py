@@ -2,12 +2,14 @@
 import json
 from pathlib import Path
 import sys
+from cyui_modules.code import CodeEditor, CodeDocument, CodeViewState, code_viewer
 from concurrent.futures import ThreadPoolExecutor
 
 class Panel:
     def __init__(self,runtime,principal=None):
         self.runtime=runtime;self.index=0;self.drafts={};self.job=None;self.message='';self.frames=0
         self.test='--ui-test-advanced' in sys.argv;self.future=None;self.executor=ThreadPoolExecutor(max_workers=1)
+        self.editors={};self.code_views={};self.selectable_json={}
         if runtime is not None:
             from cytools_core.transports.api import LocalClient
             from model_options_ui import submit_exact
@@ -31,6 +33,20 @@ class Panel:
         _,state=self.state();state.update(text=json.dumps(value['parameters'],indent=2,ensure_ascii=False),backend=value.get('backendId',''),model=value.get('modelId',''))
         for key in ('priority','queue','execution'):
             if key in value.get('uiState',{}).get('invocation',{}):state[key]=value['uiState']['invocation'][key]
+    def draw_json(self,identifier,text,height):
+        import cyui
+        from ui_common import raw,label
+        if identifier not in self.code_views:
+            editor=CodeEditor('', 'json');editor.read_only=True;editor.preview=False
+            self.code_views[identifier]=(CodeDocument('', 'json'),CodeViewState(),editor)
+        document,state,editor=self.code_views[identifier]
+        _,self.selectable_json[identifier]=raw().checkbox(label('Selectable JSON text##'+identifier),self.selectable_json.get(identifier,False))
+        if self.selectable_json[identifier]:
+            if editor.text!=text:editor.set_text(text)
+            editor.draw(identifier+'##selectable',(-1,cyui.dp(height)))
+        else:
+            document.set_text(text,'json');code_viewer(identifier,state,document,(0,cyui.dp(height)))
+
     def draw_tab(self):
         from ui_common import raw,label
         ui=raw();opened,_=ui.begin_tab_item(label('Advanced operations'),flags=ui.TabItemFlags_.set_selected if self.test else 0)
@@ -60,8 +76,12 @@ class Panel:
             ui.same_line()
             if ui.button(label('Import current form')):self.restore(current_recipe());operation,state=self.state()
             if ui.collapsing_header(label('Full input and output schemas')):
-                ui.input_text_multiline('##contract',json.dumps(operation,indent=2,ensure_ascii=False),ui.ImVec2(-1,cyui.dp(180)),flags=ui.InputTextFlags_.read_only)
-            _,state['text']=ui.input_text_multiline(label('Parameters JSON'),state['text'],ui.ImVec2(-1,cyui.dp(200)))
+                self.draw_json('##contract',json.dumps(operation,indent=2,ensure_ascii=False),210)
+            if operation['id'] not in self.editors:self.editors[operation['id']]=CodeEditor(state['text'],'json')
+            editor=self.editors[operation['id']]
+            if editor.text!=state['text']:editor.set_text(state['text'])
+            _,editor.preview=ui.checkbox(label('JSON syntax preview'),editor.preview)
+            editor.draw('##parameters-json-'+operation['id'],(-1,cyui.dp(290 if editor.preview else 200)));state['text']=editor.text
             if cyui.begin_properties('##property-Backend ID'):
                 cyui.property(tr('Backend ID'))
                 _,state['backend']=ui.input_text('##Backend ID',state['backend'])
@@ -113,8 +133,10 @@ class Panel:
             if self.job:
                 ui.text(self.job['state'])
                 if ui.button(label('Copy job and outputs')):ui.set_clipboard_text(json.dumps(self.job,indent=2,ensure_ascii=False))
-                ui.input_text_multiline('##job',json.dumps(self.job,indent=2,ensure_ascii=False),ui.ImVec2(-1,cyui.dp(180)),flags=ui.InputTextFlags_.read_only)
-            if self.message:ui.input_text_multiline('##result',self.message,ui.ImVec2(-1,cyui.dp(120)),flags=ui.InputTextFlags_.read_only)
+                self.draw_json('##job',json.dumps(self.job,indent=2,ensure_ascii=False),180)
+            if self.message:
+                if cyui.button(label('Copy result')):ui.set_clipboard_text(self.message)
+                self.draw_json('##result',self.message,160)
         except Exception as exc:self.message=str(exc)
 
 

@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import traceback
+from cyui_modules.diagnostics import LogBuffer, LogState, log_view
 
 LIMIT=8*1024*1024
 def save_screenshot(path,pixels):
@@ -53,6 +54,7 @@ class Journal:
         self.root=Path(root);folder=self.root/'data/logs';folder.mkdir(parents=True,exist_ok=True)
         self.path=folder/'standalone.log';self.selected=self.path;self.text='';self.paused=False;self.last=0.;self.focus=False
         self.copy_thread=None;self.copy_result=None
+        self.buffer=LogBuffer(max_bytes=LIMIT);self.log_state=LogState();self.buffer_text=None;self.loaded_path=None;self.read_at=0.
         self.principals={};self.cursors={};self.files=set();self.bound=set();self.discovery={};self.test='--ui-test-logs' in sys.argv;self.frames=0
         self.handler=RotatingFileHandler(self.path,maxBytes=2*1024*1024,backupCount=3,encoding='utf-8',delay=True)
         self.handler.setFormatter(SafeFormatter('%(asctime)s %(levelname)s %(message)s'))
@@ -125,10 +127,30 @@ class Journal:
             def copy():self.copy_result=self.read(selected,full=True)
             self.copy_thread=threading.Thread(target=copy,daemon=True);self.copy_thread.start()
         if self.copy_result is not None:ui.set_clipboard_text(self.copy_result);self.copy_result=None
-        ui.text_wrapped(tr('Select text and press Ctrl+C. Ctrl+A selects all. Refresh pauses while selecting.'))
-        if not self.paused and not self.focus:self.text=self.read()
-        ui.input_text_multiline('##standalone-log',self.text,ui.ImVec2(-1,max(cyui.dp(180),ui.get_content_region_avail().y-cyui.dp(20))),flags=ui.InputTextFlags_.read_only)
-        self.focus=ui.is_item_active()
+        # Re-read changed files at most three times per second, then let the shared
+        # module cache/clip/filter rows. The original file and full-copy stay available.
+        now=time.monotonic()
+        if (not self.paused and not self.focus and now-self.read_at>.3) or self.loaded_path!=self.selected:
+            self.text=self.read();self.read_at=now;self.loaded_path=self.selected
+        if self.buffer_text!=self.text:
+            appended=self.buffer_text is not None and self.buffer_text.endswith('\n') and self.text.startswith(self.buffer_text)
+            content=self.text[len(self.buffer_text):] if appended else self.text
+            if not appended:self.buffer.clear();self.log_state.selected=0
+            for line in content.splitlines():
+                match=re.search(r'\b(DEBUG|INFO|WARNING|ERROR|CRITICAL)\b',line)
+                level=(match.group(1).lower() if match else 'info').replace('critical','error')
+                self.buffer.append(level,line)
+            self.buffer_text=self.text
+        selected=log_view('##standalone-diagnostics',self.log_state,self.buffer,size=(0,max(cyui.dp(180),ui.get_content_region_avail().y-cyui.dp(140))))
+        if selected:
+            row=next((row for row in self.log_state.rows if row.id==selected),None)
+            if row:self.selection_text=row.text
+        ui.text_wrapped(tr('Select a row to copy its text. Copy entire log includes the complete file.'))
+        ui.input_text_multiline('##selected-log-text',getattr(self,'selection_text',''),(0,cyui.dp(60)),flags=ui.InputTextFlags_.read_only)
+        if cyui.begin_section(label('Raw log text'),False):
+            ui.input_text_multiline('##standalone-log',self.text,(0,cyui.dp(220)),flags=ui.InputTextFlags_.read_only)
+            self.focus=ui.is_item_active();cyui.end_section()
+        else:self.focus=False
         if self.test:
             self.frames+=1
             if self.frames==3:

@@ -10,7 +10,7 @@ OUT.mkdir(parents=True,exist_ok=True)
 def files():
     for path in (ROOT/"app").rglob("*"):
         if path.is_file() and not any(part in ("__pycache__",".pytest_cache") for part in path.parts):yield path
-for name,paths in (("cytools-app.zip",list(files())),("CyTools_Subtitle-"+json.loads((ROOT/"app/CyTool.json").read_text("utf-8"))["version"]+"-source.zip",list(files())+[ROOT/"CyTools_Subtitle.exe",ROOT/"CyTools_Subtitle.sh",ROOT/"LISEZ-MOI.md",ROOT/"README.md",ROOT/"LICENSE",ROOT/".gitignore",ROOT/".gitleaks.toml"]+list((ROOT/"LICENCES").rglob("*")))):
+for name,paths in (("cytools-app.zip",list(files())),("CyTools_Subtitle-"+json.loads((ROOT/"app/CyTool.json").read_text("utf-8"))["version"]+"-source.zip",list(files())+[ROOT/"CyTools_Subtitle.exe",ROOT/"CyTools_Subtitle.sh",ROOT/"LISEZ-MOI.md",ROOT/"README.md",ROOT/"LICENSE",ROOT/".gitignore",ROOT/".gitleaks.toml",ROOT/".gitattributes"]+list((ROOT/"LICENCES").rglob("*")))):
     target=OUT/name
     with zipfile.ZipFile(target,"w",zipfile.ZIP_DEFLATED) as archive:
         for path in paths:

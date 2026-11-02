@@ -12,6 +12,7 @@ import unicodedata
 import sys
 import uuid
 import webbrowser
+from cyui_modules import locale as ui_locale
 
 APP = Path(__file__).resolve().parent
 ROOT = APP.parent
@@ -45,6 +46,9 @@ class Preferences:
 
 preferences = Preferences()
 catalog = read(APP/'locales/ui.json', {})
+for _language in ('en','fr'):
+    ui_locale.register_translations(_language,{key:value[_language] for key,value in catalog.items() if isinstance(value,dict) and isinstance(value.get(_language),str)})
+ui_locale.set_locale(preferences.values['language'])
 def normalized(text):
     return ''.join(c for c in unicodedata.normalize('NFKD',text) if not unicodedata.combining(c)).replace('’',"'").casefold()
 _normalized = {normalized(k):v for k,v in catalog.items()}
@@ -283,26 +287,21 @@ def raw():
     return _raw
 
 def tr(text):
-    if not isinstance(text, str) or not text: return text
-    language = preferences.values['language']
-    translation = catalog.get(text) or _normalized.get(normalized(text))
-    if translation: return translation.get(language, translation.get('en', text))
-    # Only registered display fragments are substituted. No remote translator,
-    # model inference, token access or modification of user-entered text.
+    if not isinstance(text,str) or not text:return text
+    ui_locale.set_locale(preferences.values['language'])
+    translation=catalog.get(text) or _normalized.get(normalized(text))
+    if translation:return ui_locale.tr(text,translation.get(preferences.values['language'],translation.get('en',text)))
     if not text.lstrip().startswith(('{','[')):
         for prefix in _prefixes:
-            if text.startswith(prefix): return catalog[prefix].get(language,prefix)+tr(text[len(prefix):])
-    return text
+            if text.startswith(prefix):return ui_locale.tr(prefix)+tr(text[len(prefix):])
+    return ui_locale.tr(text)
+
 
 def label(text):
-    if not isinstance(text, str) or not text or text.startswith('##'): return text
-    visible, separator, identity = text.partition('###')
-    if not separator:
-        # ## hides a suffix but the FULL original label contributes to its ID.
-        # Only an explicit ### intentionally replaces the identity.
-        visible = text.partition('##')[0]
-        identity = text
-    return tr(visible)+'###'+identity
+    if not isinstance(text,str) or not text or text.startswith('##'):return text
+    ui_locale.set_locale(preferences.values['language'])
+    return ui_locale.tr_label(text,tr(text.split('##',1)[0]))
+
 
 class ImGuiFacade:
     texts = {'text', 'text_wrapped', 'text_disabled', 'text_unformatted', 'set_tooltip', 'bullet_text', 'separator_text'}
@@ -504,6 +503,7 @@ def run(runner, shell=False):
     def draw():
         nonlocal frames
         frames+=1
+        ui_locale.set_locale(preferences.values['language'])
         journal.poll()
         if _mesh_panel is not None: _mesh_panel.poll()
         if frames==1 or abs(cyui.dpi()-hello_imgui.dpi_window_size_factor())>.01: apply_style()
