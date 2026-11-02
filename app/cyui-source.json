@@ -48,5 +48,6 @@
     "cyui_modules/commands.py": "cb39f3a7a794cd7480bab2d6eb8302bf02ce19bdc445c857828dc1349956ca62",
     "cyui_modules/code.py": "1025f03d530a5f7a3cbd75572be9a4e43e0a8e83569f74970e484e41b887c5be"
   },
-  "modifications": []
+  "modifications": [],
+  "licenseUrl": "https://github.com/MrMybal/CyUI/blob/main/LICENSE"
 }

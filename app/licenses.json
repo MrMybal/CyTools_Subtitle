@@ -64,8 +64,9 @@
     "kind": "Interface",
     "name": "CyUI 1.2.0 (selected Python modules)",
     "license": "MIT",
-    "notes": "Copyright (c) 2026 Cyberalien. Full license: LICENCES/CyUI-MIT.txt. Vendored Python port; source fingerprint: app/cyui-source.json.",
-    "url": "https://github.com/MrMybal/CyUI/blob/ff023e646c6a3038b3dfbfd53f6d2b4a2f5955e3/LICENSE"
+    "notes": "MIT license text is included in LICENCES/CyUI-MIT.txt. The upstream repository is currently private; installed applications do not need access to it.",
+    "url": "https://github.com/MrMybal/CyUI/blob/main/LICENSE",
+    "repository": "https://github.com/MrMybal/CyUI"
   },
   {
     "kind": "Engine",

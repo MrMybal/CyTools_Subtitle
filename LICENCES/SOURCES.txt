@@ -30,3 +30,10 @@ Model license: https://openmdw.ai/license/1-1/
 Pinned native runtime and official GGUF hashes: ../app/nemotron-catalog.json
 
 CyUI 1.2.0 Python snapshot and selected modules (MIT): https://github.com/MrMybal/CyUI/tree/ff023e646c6a3038b3dfbfd53f6d2b4a2f5955e3
+
+CyUI official MIT license for the distributed revision: https://github.com/MrMybal/CyUI/blob/ff023e646c6a3038b3dfbfd53f6d2b4a2f5955e3/LICENSE
+The CyUI repository is currently private. The complete license is included in CyUI-MIT.txt and ../app/LICENCES/CyUI-MIT.txt.
+
+CyUI: MIT. Full license: LICENCES/CyUI-MIT.txt.
+Upstream license: https://github.com/MrMybal/CyUI/blob/main/LICENSE
+Repository: https://github.com/MrMybal/CyUI (currently private; no upstream access required to run this application).
