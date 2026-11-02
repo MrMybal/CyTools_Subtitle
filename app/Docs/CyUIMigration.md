@@ -22,13 +22,10 @@ Read-only JSON views retain a Selectable JSON text mode for partial selection/co
 ## Reproduce and verify the integration
 
 ```powershell
-.
-untime\python\Scripts\python.exe app/sync_cyui.py --check
+.\runtime\python\Scripts\python.exe app/sync_cyui.py --check
 # Restore the exact selected blobs from a local checkout containing the pinned commit:
-.
-untime\python\Scripts\python.exe app/sync_cyui.py --sync --source PATH_TO_CYUI
-.
-untime\python\Scripts\python.exe -m pytest app/test_modular_ui.py -q
+.\runtime\python\Scripts\python.exe app/sync_cyui.py --sync --source PATH_TO_CYUI
+.\runtime\python\Scripts\python.exe -m pytest app/test_modular_ui.py -q
 ```
 
 The sync tool reads committed Git blobs without modifying the reference checkout, rejects hash changes and verifies selected Python import dependencies. It performs no automatic network fetch or install. .gitattributes preserves LF bytes for the vendored snapshot. To update CyUI deliberately, review the new revision/modules, update the pins and rerun the same checks. Do not patch copied library files; application adapters belong in subtitle_ui.py. Existing source/portable builders include the selected source package and complete CyUI MIT notice in root/app LICENCES.
@@ -54,3 +51,5 @@ Windows x64: 86 tests pass, including real ImGui move/trim/commit/cancel/revisio
 The actual EXE rendered all eight views in English and French across five themes and both densities. A synthetic padded-width video and subtitle document exercised the texture surface and a real edit job followed by Undo/Redo. Headless ImGui frames also rendered adapters at 100%, 125%, 150% and 200% style DPI. This does not certify moving a native window between physical monitors. The rebuilt native launcher and real WM_DROPFILES input loaded the synthetic media/document, played, sought and paused without decoder/texture errors. Actual MCP stdio retained 45 tools and completed read/edit/export/FinishTask with original words, voices and inputs preserved. Private reports/captures are retained in data/reports. Linux/macOS execution is unvalidated, matching the product's prior platform status.
 
 No transcription-quality improvement is implied by this interface migration. Phonon, Community-1 and NVIDIA inference logic, downloads and installed weights are unchanged.
+
+CyUI license: [https://github.com/MrMybal/CyUI/blob/main/LICENSE](https://github.com/MrMybal/CyUI/blob/main/LICENSE). The complete MIT text ships with the application, including when the upstream repository is private.
