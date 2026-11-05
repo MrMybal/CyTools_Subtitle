@@ -1,2 +1,3 @@
 app/cyui.py text eol=lf
 app/cyui_modules/*.py text eol=lf
+.github export-ignore

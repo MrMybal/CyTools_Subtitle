@@ -62,10 +62,16 @@
       "expectedRevision": "2f4c91a543fb475c"
     },
     {
+      "id": "guide-app-documentation-publishing",
+      "title": "Publishing the CyDoc reader",
+      "locale": "fr",
+      "expectedRevision": "5e791fdf485cf29d"
+    },
+    {
       "id": "guide-app-documentation-readme",
       "title": "Local documentation (CyDoc)",
       "locale": "fr",
-      "expectedRevision": "7813cec244e6cdf6"
+      "expectedRevision": "c278777105ffbe62"
     },
     {
       "id": "guide-app-documentation-validation",
@@ -83,7 +89,7 @@
       "id": "guide-readme",
       "title": "CyTools_Subtitle",
       "locale": "fr",
-      "expectedRevision": "c2f08238b84beef6"
+      "expectedRevision": "74e86109d4d6c87e"
     },
     {
       "id": "licenses",

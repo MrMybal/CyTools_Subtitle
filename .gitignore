@@ -22,3 +22,6 @@ models/
 reports/
 *.safetensors
 *.gguf
+/_site/
+/_site.previous/
+/_pages-stage-*/
