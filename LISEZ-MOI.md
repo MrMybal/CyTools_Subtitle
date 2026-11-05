@@ -40,3 +40,8 @@ Version 0.5.0 : identification facultative des locuteurs avec Community-1, noms 
 Version 0.6.0 : moteur facultatif NVIDIA Nemotron 3 pour attribuer les voix, sur CPU ou CUDA. Dans Installation, consultez puis acceptez explicitement les licences OpenMDW 1.1 (modèle) et Apache 2.0 (runtime), et téléchargez le runtime choisi ainsi que le modèle Q8_0. En génération ou dans Speakers, choisissez NVIDIA et CPU/CUDA. Phonon continue de produire le texte et ses timings ; le GPU NVIDIA concerne ici l’attribution des voix. Le modèle (~107 Mo) et le runtime (~6 Mo CPU / ~102 Mo CUDA) sont téléchargés séparément. Certains passages peuvent rester sans locuteur et doivent être relus. Voir [le guide NVIDIA](app/Docs/NvidiaDiarization.md).
 
 Version 0.7.0 : migration vers les modules partagés CyUI 1.2. Timeline des répliques avec déplacement/découpe et annulation par Échap, inspecteur commun, historique Ctrl+Z/Ctrl+Y, palette Ctrl+Maj+P, lecteur Images, journaux Diagnostics et édition JSON commune. Les modèles, traitements et formats restent conservés. Voir [le guide de migration](app/Docs/CyUIMigration.md).
+
+
+## Documentation locale
+
+Dans l’application, ouvrir **Options → Ouvrir le manuel local (F1)** ou appuyer sur **F1**. Le lecteur hors ligne complet est livré dans [`app/help/index.html`](app/help/index.html). [Régénérer le manuel](app/documentation/README.md).

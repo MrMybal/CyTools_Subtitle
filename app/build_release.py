@@ -4,6 +4,11 @@ import hashlib
 import json
 import stat
 import zipfile
+import subprocess as _doc_subprocess, sys as _doc_sys
+from pathlib import Path as _DocPath
+_doc_build = _DocPath(__file__).resolve().parents[0] / 'documentation' / 'build.py'
+_doc_subprocess.run([_doc_sys.executable, str(_doc_build), '--check'], check=True)
+
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/"runtime/distributions"
 OUT.mkdir(parents=True,exist_ok=True)

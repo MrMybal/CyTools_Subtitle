@@ -1,0 +1,28 @@
+{
+  "name": "CyTools_Subtitle",
+  "version": "0.7.0",
+  "defaultLocale": "en",
+  "locales": [
+    {
+      "code": "en",
+      "label": "English"
+    },
+    {
+      "code": "fr",
+      "label": "Français"
+    }
+  ],
+  "homePage": "overview",
+  "content": "manual",
+  "assets": "assets",
+  "out": "export",
+  "modules": [],
+  "translationReport": true,
+  "aliases": {
+    "home": "overview",
+    "readme": "overview",
+    "help": "overview",
+    "user-guide": "guide-lisez-moi",
+    "api": "operations"
+  }
+}

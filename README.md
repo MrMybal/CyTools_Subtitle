@@ -119,3 +119,8 @@ Video preview uses CyUI Images with fit/zoom/pan. Diagnostics adds severity/sear
 CyUI: MIT. Full license: LICENCES/CyUI-MIT.txt.
 Upstream license: https://github.com/MrMybal/CyUI/blob/main/LICENSE
 Repository: https://github.com/MrMybal/CyUI (currently private; no upstream access required to run this application).
+
+
+## Local documentation
+
+Open **Options → Open local manual (F1)** or press **F1** in the application. The complete offline reader is shipped in [`app/help/index.html`](app/help/index.html). [Regenerate the manual](app/documentation/README.md).

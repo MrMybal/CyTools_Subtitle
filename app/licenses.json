@@ -102,5 +102,12 @@
     "license": "OpenMDW-1.1",
     "url": "https://huggingface.co/nvidia/Nemotron-3-Diarization",
     "notes": "Official pinned GGUF, downloaded separately after explicit license acceptance. Model/license sources are in nemotron-catalog.json."
+  },
+  {
+    "kind": "Library",
+    "name": "CyDoc 0.1.0",
+    "license": "MIT",
+    "url": "https://github.com/MrMybal/CyDoc",
+    "notes": "Local documentation reader; full license in LICENCES/CyDoc-MIT.txt. Build dependencies are not required for reading."
   }
 ]

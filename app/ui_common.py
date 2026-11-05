@@ -358,6 +358,9 @@ class ImGuiFacade:
                 args[2] = [tr(value) for value in args[2]]
             if name == 'progress_bar' and len(args)>2: args[2] = tr(args[2])
             result=target(*args, **kwargs)
+            if name == 'begin_tab_item' and result[0]:
+                import help_docs
+                help_docs.note_tab(key.split('/')[-1], raw().get_frame_count())
             if editable and not secret_key(key) and isinstance(result,tuple) and len(result)==2:
                 _widget_values[key]=result[1]
                 if restore: result=(True,result[1])
@@ -407,6 +410,8 @@ def dependency_records():
     return records
 
 def options_panel():
+    import help_docs
+    help_docs.draw_options()
     global _licenses
     native=raw()
     import cyui
@@ -473,6 +478,8 @@ def run(runner, shell=False):
     from imgui_bundle import hello_imgui
     original=runner.callbacks.show_gui
     bind_runtime(original)
+    import help_docs
+    help_docs.set_context(scope)
     from advanced_ui import Panel as AdvancedPanel
     principal=next((v for v in scope().values() if hasattr(v,'client_id') and hasattr(v,'permissions')),None)
     _advanced_panel=AdvancedPanel(_runtime,principal)
@@ -502,6 +509,7 @@ def run(runner, shell=False):
     has_tabs='begin_tab_bar(' in source
     def draw():
         nonlocal frames
+        help_docs.poll_shortcut()
         frames+=1
         ui_locale.set_locale(preferences.values['language'])
         journal.poll()
