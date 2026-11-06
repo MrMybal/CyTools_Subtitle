@@ -1,3 +1,8 @@
 app/cyui.py text eol=lf
 app/cyui_modules/*.py text eol=lf
 .github export-ignore
+
+# Distribute the complete generated manual, never its private build workspace.
+app/.CyDocBuild export-ignore
+app/.CyDocExport export-ignore
+app/.CyDocExport.previous export-ignore

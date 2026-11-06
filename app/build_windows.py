@@ -12,7 +12,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON_URL = "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip"
 PYTHON_SHA256 = "009d6bf7e3b2ddca3d784fa09f90fe54336d5b60f0e0f305c37f400bf83cfd3b"
-IGNORE = {"__pycache__", ".pytest_cache"}
+IGNORE = {"__pycache__", ".pytest_cache", '.CyDocBuild', '.CyDocExport', '.CyDocExport.previous', 'node_modules'}
 
 
 def main():
@@ -142,6 +142,6 @@ def main():
 if __name__ == "__main__":
     import subprocess as _doc_subprocess, sys as _doc_sys
     from pathlib import Path as _DocPath
-    _doc_build = _DocPath(__file__).resolve().parents[0] / 'documentation' / 'build.py'
+    _doc_build = _DocPath(__file__).resolve().parents[0] / '.CyDocBuild' / 'build.py'
     _doc_subprocess.run([_doc_sys.executable, str(_doc_build), '--check'], check=True)
     main()
