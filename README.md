@@ -1,128 +1,143 @@
-# CyTools_Subtitle
+<table width="100%">
+  <tr>
+    <td width="300" align="left" valign="top">
+      <a href="website/README.md#build-and-preview">Website (local build)</a><br>
+      <a href="app/Documentation/Documentation.html#/en/overview">Offline documentation</a><br>
+      <a href="https://github.com/MrMybal/CyTools_Subtitle">GitHub</a><br><br>
+      <sub>README</sub><br>
+      <a href="README.md">English</a> · <a href="README.fr.md">Français</a>
+    </td>
+    <td width="400" align="center" valign="middle">
+      <strong>CyTools Subtitle</strong>
+    </td>
+    <td width="300" align="right" valign="top">
+      <p><sub>Application license</sub><br><a href="LICENSE"><strong>AGPL-3.0-only</strong></a></p>
+      <p><sub>Application version</sub><br><a href="VERSION.md"><strong>0.7.1</strong></a><br><strong>EXPERIMENTAL</strong></p>
+      <p><a href="https://github.com/MrMybal/CyTools_Subtitle/releases/download/v0.7.1/CyTools_Subtitle-0.7.1-windows-x64.zip"><strong>Download</strong></a><br><sub>Windows x64 · portable · authorised account</sub></p>
+    </td>
+  </tr>
+</table>
 
-[Documentation (local)](app/Documentation/Documentation.html#/en/overview) · [Website (local build)](website/README.md#build-and-preview)
+<h1 align="center">CyTools Subtitle</h1>
 
-Local subtitle generation from audio and video, with a Dear ImGui media player, cue editor, and MCP/CLI API.
 
-[Français](LISEZ-MOI.md) · [Detailed guide](app/README.md) · [Capabilities](app/Docs/CapabilityCoverage.md)
+Transcribe local media, review word timing and edit captions with a synchronised player. Add optional speaker analysis and export the result. For video creators, editors and anyone who needs to review and correct a local subtitle document.
+
+> **EXPERIMENTAL · 0.7.1**
+>
+> Published Windows build for evaluation; some engine paths remain unvalidated. Read the [version notes and known limitations](VERSION.md).
+
+[![Subtitle workspace · hand-authored demo captions, not a transcription-quality claim.](website/assets/showcase/workspace.webp)](website/assets/showcase/workspace.webp)
+
+*Subtitle workspace · hand-authored demo captions, not a transcription-quality claim.*
+
+
+## The application
+
+### Local transcription
+
+Phonon transcription produces text and word timestamps from compatible local audio or video. Install the transcription runtime and model separately, then inspect the output in the application.
+
+### Review & correction
+
+Use the caption list, timeline and inspector to correct text and timing. Reflow lines and inspect timing warnings without replacing the original word evidence.
+
+[![Caption editor · sample dialogue and per-caption inspector.](website/assets/showcase/editor.webp)](website/assets/showcase/editor.webp)
+
+*Caption editor · sample dialogue and per-caption inspector.*
+
+
+### Optional speaker analysis
+
+Compatible Community-1 or NVIDIA Nemotron 3 components assign anonymous speaker IDs. You can rename speakers and override individual captions. These are labels for the recording, not automatic real-world identities.
 
 ## Features
 
-- Phonon-2 for English; Phonon-2.5 for multilingual transcription, including French.
-- Sequential bounded audio windows and native word timestamps.
-- Phrase-based SRT, WebVTT and editable JSON subtitles.
-- Audio/video playback with caption overlays, pause and seek.
-- Cue text/timing edits, track offset and reviewer-supplied sound descriptions.
-- Automatic reading-time/overlap repair with explicit synchronization limits and visible unresolved warnings.
-- The same operations through the desktop editor, MCP, CLI and authenticated HTTP service.
-- English/French UI, persistent preferences, configuration save/load, separate PyTorch/model installation and compatible local references.
+- **Transcription:** Phonon local audio/video input, sequential windows and original word timestamps.
+- **Review:** media preview, caption overlays, searchable cues, timeline seek/zoom/trim and inspector edits with undo/redo.
+- **Corrections:** text and timing edits, line reflow, timing repair, track offsets and reviewer-supplied sound descriptions.
+- **Speakers:** optional Community-1 or NVIDIA Nemotron 3 analysis, anonymous speaker IDs, names and manual per-caption overrides.
+- **Delivery:** SRT, WebVTT and versioned JSON, reusable configurations and CLI/MCP operations. Transcription and speaker engines are installed separately.
 
-## Windows portable download
+**Desktop and automation:** English is the default interface language; French is selectable in Options. Save/load generation configurations, follow copyable application logs and use the declared operations through the CLI or MCP. The [manual](app/Documentation/Documentation.html#/en/overview) describes the real parameters and output contracts.
 
-For the latest published Windows build, download the portable ZIP from [Releases](https://github.com/MrMybal/CyTools_Subtitle/releases/latest), extract the entire archive to a writable folder, and open **CyTools_Subtitle.exe**. Python and the media/UI dependencies are included. No system Python installation is required. In **Installation**, review the PyTorch license and click **Download / repair PyTorch**, then review the model license and download Phonon-2 or Phonon-2.5. PyTorch and model weights are downloaded separately.
+---
 
-English is the default interface language; French is selectable in Options. Keep app/ and runtime/ next to the executable. Settings, models and outputs are created in data/. Private release downloads require a GitHub account with access to the repository. The in-app updater currently supports public release downloads; use the browser while this repository is private.
+## Installation
 
-## Windows source setup
+The published application build is **Windows x64**. The portable ZIP includes its private Python runtime and base UI/media dependencies. Models and optional heavy engines are separate downloads.
 
-Python 3.11 is required. In PowerShell from this directory:
+1. [Download CyTools Subtitle 0.7.1](https://github.com/MrMybal/CyTools_Subtitle/releases/download/v0.7.1/CyTools_Subtitle-0.7.1-windows-x64.zip).
+2. Extract the complete ZIP into a writable folder. Keep `app/` and `runtime/` beside the launcher.
+3. Open **CyTools_Subtitle.exe**. Use the installation/model workspace for the components you need; review each component licence and any provider access conditions before download.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File app/install.ps1
-```
+No machine Python is needed just to open the portable application. Source setup and some optional engine installers require additional tools such as Git. Keep the full release folder; the standalone `.exe` or an `app` update ZIP alone is not a complete installation.
 
-Open **CyTools_Subtitle.exe**, then use **Installation** to review the model license and download a model. Choose your audio/video source and Generate subtitles. Review the result in the player and export the wanted files.
+Private GitHub repository: downloads require an authorised account. Windows x64 is tested; Linux and macOS remain unvalidated. Transcription runs on CPU. Optional NVIDIA speaker analysis can use CPU or CUDA. Translation and neural source separation are not implemented. Model access may require accepting provider terms.
 
-The environment is created privately in runtime/python. Source checkouts exclude model weights, installed environments, caches and generated results. The source setup creates a venv and requires machine Python. The Windows portable release includes its own interpreter. PyTorch is installed separately through Installation.
+This repository and its downloads require an authorised GitHub account. The in-app public-release downloader cannot authenticate a private release; download with your browser. The complete offline CyDoc reader ships in `app/Documentation/`.
 
-CPU inference is implemented and tested on Windows x64. The Linux installer/launcher is supplied but unvalidated; Linux/macOS status remains Unknown. Phonon transcription and Community-1 run on CPU. Optional NVIDIA Nemotron 3 speaker analysis supports CPU or CUDA on Windows x64. Neural vocal separation, translation and automatic environmental-sound classification are not implemented. Voice filtering is bandpass plus FFT denoise.
+### Updates and data
 
-## MCP and CLI
+For an existing compatible installation, use its Updates page and the matching application update package. Keep `data/`, installed engines and models. An update for another runtime ABI must not be forced. If the required runtime changes, use the complete portable release in a separate folder and follow the migration instructions.
 
-```powershell
-.\runtime\python\Scripts\python.exe .\app\make_mcp_config.py
-.\runtime\python\Scripts\python.exe .\app\tool.py describe
-.\runtime\python\Scripts\python.exe .\app\tool.py --data-dir .\data\mcp mcp
-```
+## Source, build and required libraries
 
-The first command prints an MCP configuration with paths for your installation. Absolute local media/document paths are imported automatically; no manual staging is required. MCP task files are temporary: export wanted results before cy_finish_task or disconnect. Desktop sessions retain their outputs.
+<details>
+<summary>Windows source setup and optional build tools</summary>
 
-See [the operation guide](app/README.md) for transcription, inspection, editing, timing repair, models and exports.
 
-## Development
-
-The actual MIT CyToolsCore 0.10.1 wheel is included in app/packages. Business contracts are in app/CyTool.json. Native launcher sources and its build script are in app/. Heavy model/media/UI dependencies remain outside the Core.
+Use Python **3.11** for the base source environment. Git is needed for cloning and pinned Git requirements. Building the launcher needs the MSVC x64 Build Tools; use a developer command prompt.
 
 ```powershell
-.\runtime\python\Scripts\python.exe -m pip install pytest
-.\runtime\python\Scripts\python.exe -m pytest app/test_tool.py app/test_timing.py -q
-.\runtime\python\Scripts\cytools.exe validate app/CyTool.json
+git clone https://github.com/MrMybal/CyTools_Subtitle.git
+cd CyTools_Subtitle
+powershell -File app\install.ps1
+powershell -File app\build_launcher.ps1
+.\CyTools_Subtitle.exe
 ```
 
-The optional delivery integration script requires locally generated sample clips, installed models and an audio device. Test evidence and platform limits are described in [Validation](app/Docs/Validation.md).
+The exact base requirements are in [app/requirements.txt](app/requirements.txt). Engines use their own environments and model catalogues; installing the base environment does not install them. Follow the [developer setup](app/README.md) for the detailed build and optional components.
 
-## Windows release build
+</details>
 
-Build from a Windows x64 CPython 3.11 environment with the pinned dependencies. Compile the launcher with `app/build_launcher.ps1` from a Visual Studio developer prompt. Run `python app/build_windows.py`, validate and relocate the generated directory, then run `python app/build_windows.py --package-only --directory PATH`. The builder downloads the official Python embeddable package, verifies its pinned SHA256 and installs dependencies into a fresh directory using `app/windows-constraints.txt` and `app/requirements-base-windows.txt`. PyTorch, SymPy, NetworkX and mpmath are excluded from the base ZIP and installed privately on request. It does not copy an existing venv. `app/build_release.py` builds the app update and corresponding application source archives.
-
-## Optional PyTorch runtime
-
-The base application opens without PyTorch: preview, subtitle editing and timing repair remain available. In Installation, review the PyTorch license and use **Download / repair PyTorch**. This installs pinned CPU PyTorch and its specific math dependencies into a private component directory. A new candidate is verified before activation; a failed or cancelled download does not replace an existing active component. Model files and CUDA/system drivers are not moved.
-
-MCP/CLI clients use **runtime_status** and **install_runtime**. Installation requires the authenticated `network` permission and `license_accepted: true`; `repair: true` builds a new candidate. See [Runtime installation](app/Docs/RuntimeInstallation.md). PyTorch is checked before inference and missing prerequisites produce an actionable error.
-
-The 0.3.0 base runtime uses a new update ABI. For a 0.2.x installation, extract the new full Windows ZIP into a separate directory. Existing Phonon model folders can be referenced through Installation without moving them; keep existing data and results.
-
-## CyUI desktop
-
-Version 0.4.1 fixes a video preview crash on captures with padded RGB image rows. Drag an audio/video file or subtitle JSON document from the file manager onto the main window to open it. Preview decoding remains bounded and runs off the UI thread.
-
-Version 0.4.0 uses CyUI with a sidebar, synchronized player, searchable phrase captions and an inspector for edits. Choose Mid Grey, Light Grey, Amber Night, Violet or Navy in Options, with compact/comfortable density and text scaling. English remains the default, with French selectable. PyTorch and models are still separate downloads.
-
-[CyUI](https://github.com/MrMybal/CyUI) is MIT-licensed by Cyberalien: [official license](https://github.com/MrMybal/CyUI/blob/ff023e646c6a3038b3dfbfd53f6d2b4a2f5955e3/LICENSE). Its full notice is included in [LICENCES/CyUI-MIT.txt](LICENCES/CyUI-MIT.txt), including for users without access to the currently private CyUI repository. Application code remains AGPL-3.0-only. The selected unmodified Python modules and their pinned revision/hashes are documented in app/cyui-source.json.
+---
 
 ## License
 
-Copyright (c) 2026 Cyberalien. CyTools_Subtitle is licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only). The bundled CyToolsCore SDK remains MIT. Engines, libraries and model weights retain their separate licenses, including Apache-2.0, CC-BY-4.0 and the relevant FFmpeg build licenses. See [LICENSE](LICENSE), [LICENCES](LICENCES/SOURCES.txt) and app/LICENCES.
+**CyTools Subtitle is licensed under [AGPL-3.0-only](LICENSE).** CyToolsCore, CyUI and CyDoc remain MIT components; their licences do not change the application licence. Optional engines, plugins and model weights retain their own terms.
 
+### Main components and third-party libraries
 
-## Optional speaker diarization (0.5.0+)
+| Library · source | License · terms | Use / scope |
+| --- | --- | --- |
+| [CyToolsCore 0.10.1](https://github.com/MrMybal/CyToolsCore) | [MIT](LICENCES/CyToolsCore-MIT.txt) | SDK/runtime: jobs, sessions, resources, CLI and MCP. |
+| [CyUI 1.2.0](https://github.com/MrMybal/CyUI) | [MIT](LICENCES/CyUI-MIT.txt) | Selected bundled Python UI modules. |
+| [CyDoc 0.1.0](https://github.com/MrMybal/CyDoc) | [MIT](LICENCES/CyDoc-MIT.txt) | Bundled offline reader; Node/npm are authoring/build tools only. |
+| [Dear ImGui / imgui-bundle](https://github.com/pthom/imgui_bundle) | [MIT + component notices](https://github.com/pthom/imgui_bundle/blob/main/LICENSE) | Desktop renderer and its bundled native components. |
+| [CPython 3.11](https://www.python.org/) | [PSF + component notices](https://docs.python.org/3.11/license.html) | Private runtime included in the Windows portable archive. |
+| [Phonon / fermion-research](https://github.com/fermionresearch/phonon) | [Apache-2.0](app/LICENCES/Phonon-Apache-2.0.txt) | Transcription integration; separately downloaded Phonon weights use CC-BY-4.0. |
+| [PyAV / FFmpeg](https://github.com/PyAV-Org/PyAV) | [BSD-3-Clause; bundled FFmpeg GPL-3.0](app/LICENCES/FFmpeg-GPL-3.0.txt) | Media decoding and export; retain build and component notices. |
+| [SciPy / Pillow / sounddevice](app/requirements.txt) | [BSD-3-Clause / MIT-CMU / MIT](app/licenses.json) | Base signal/image processing and audio playback. |
+| [PyTorch](https://github.com/pytorch/pytorch) | [BSD-3-Clause](app/licenses.json) | Optional downloaded CPU runtime, not part of the base archive. |
+| [Pyannote Audio / Community-1](https://github.com/pyannote/pyannote-audio) | [MIT (code); CC-BY-4.0 (weights)](LICENCES/PyannoteAudio-MIT.txt) | Optional CPU speaker analysis; access/terms may require a provider account. |
+| [NVIDIA NeMo-Speech.cpp / Nemotron 3](https://github.com/NVIDIA/NeMo-Speech.cpp) | [Apache-2.0 (runtime); OpenMDW-1.1 (weights)](LICENCES/NeMo-Speech-Apache-2.0.txt) | Optional native CPU/CUDA speaker backend with separate model terms. |
 
-Community-1 attributes speech to anonymous speaker IDs. Phonon still supplies the text and original word timestamps. Enable **Identify different speakers** in generation, or open an existing JSON document in the editor and use **Speakers → Identify speakers in this document**. The editor lets you rename people and override the speaker of individual captions. Names are display labels; the software does not discover real identities or identify a person across unrelated recordings.
+This table indexes the main components; it does not replace their complete transitive notices. Retain [LICENCES/](LICENCES/), [app/licenses.json](app/licenses.json), the licences beside installed packages and the notices in each optional engine/model. CUDA libraries, when installed, also retain NVIDIA’s terms.
 
-In **Installation**, scroll to **Speaker identification · Community-1**. Install the optional CPU runtime, open the official model page, accept its Hugging Face conditions, then download the model. An existing Hugging Face login is reused. On Windows, a read token can alternatively be stored in Windows Credential Manager; never put tokens in MCP parameters, generation JSON or chat. The isolated runtime and weights are downloaded separately; they do not enlarge the base package or replace Phonon's PyTorch libraries.
+## References and links
 
-Generation options include a known speaker count (0 = automatic), minimum/maximum count, CPU threads, segmentation and embedding batch sizes, and a duration refusal limit of at most four hours. The waveform uses job-owned disk storage and model inference uses bounded batches. This limit does not certify accuracy, processing speed or memory use for every recording. Voices are analyzed globally rather than independently renumbered for each Phonon window.
+- [Offline documentation](app/Documentation/Documentation.html#/en/overview)
+- [Website (local build)](website/README.md#build-and-preview)
+- [Source repository](https://github.com/MrMybal/CyTools_Subtitle) · [Releases and checksums](https://github.com/MrMybal/CyTools_Subtitle/releases)
+- [Issue tracker](https://github.com/MrMybal/CyTools_Subtitle/issues) · [Version notes](VERSION.md)
+- [Developer setup](app/README.md)
 
-Existing-document analysis preserves manual text, times, sound captions and original words by default. **Rebuild captions at speaker changes** explicitly recreates speech from original words and can replace manual speech edits; sound captions remain. Timing repair does not merge different speakers. Manual speaker overrides survive re-analysis unless replacement is explicitly requested. Speaker labels can be hidden; visible names count towards reading-speed checks. A caption spanning multiple voices remains reviewable.
+<details>
+<summary><strong>AI Usage</strong></summary>
 
-The JSON document remains schemaVersion 1 with additive optional `speakers`, `diarization`, `speakerLabels` and per-cue attribution metadata. Exported SRT/VTT can include a plain `[Name]` prefix compatible with ordinary players; raw cue text and original words are stored unchanged. Speaker IDs are scoped to the analyzed recording.
+- [Start here: project agent guide](app/AGENTS.md) — product rules and important files.
+- [Operations and AI integration](app/Documentation/DocAI.md) — actual tool contracts and task usage.
+- [Build this application](app/README.md) — source setup and application-specific commands.
 
-CLI/MCP operations: `diarization_status`, `check_diarization_access`, `install_diarization_runtime`, `install_diarization_model`, `register_diarization_model`, `diarize_subtitles`, and `rename_speakers`. Network installation/access operations require an authenticated network permission and install operations require explicit license review. Local model registration references an official compatible Community-1 bundle in place and hashes its files. All file inputs are automatically imported privately; export wanted outputs before FinishTask.
-
-Community-1 uses the CPU/Windows path. NVIDIA CUDA is available through the separate optional engine below. Speaker voiceprints, arbitrary diarization architectures and automatic person naming are not exposed. The optional pipeline's own telemetry is disabled. See [Diarization](app/Docs/Diarization.md) for the precise validation state.
-
-Version 0.5.1 fixes punctuation-only captions and spurious word-boundary splits introduced by small ASR/voice timestamp differences. Original word timestamps and raw neural timelines remain unchanged; speaker/transcription mistakes still need review.
-
-## Optional NVIDIA speaker analysis (0.6.0)
-
-In **Installation**, open **Speaker identification · NVIDIA Nemotron 3**, review the separate OpenMDW 1.1 model and Apache 2.0 runtime licenses, then install the CPU or CUDA runtime and model. Downloads are separate from the base ZIP: approximately 6 MB for CPU or 102 MB for CUDA, plus a 107 MB Q8_0 model. No additional Python/PyTorch installation is needed for this engine.
-
-Enable **Identify different speakers**, select **NVIDIA Nemotron 3**, then CPU or CUDA. This changes voice attribution; Phonon still transcribes and supplies word timestamps. The default chunked quality preset retains global voice state; full attention is limited to six minutes. NVIDIA detects up to eight anonymous voices automatically. The settings and native segmentation thresholds are also available through MCP and versioned generation configurations.
-
-The editor shows the actual voice-analysis device and unassigned captions. Changing models creates new anonymous identities; replacing existing manual speaker assignments requires an explicit choice. Existing text and times remain intact unless caption rebuilding is requested. See [NVIDIA installation, options and limits](app/Docs/NvidiaDiarization.md) and [validation evidence](app/Docs/Validation.md). The tested natural dialogue showed better main-turn separation, with some speech still unassigned; no general quality guarantee is implied.
-
-## Modular CyUI interface (0.7.0)
-
-The subtitle timeline now uses the shared CyUI Timeline module: seek on the ruler, zoom with the wheel, pan with Shift+wheel, scroll voice lanes with Ctrl+wheel and drag clips/edges to move/trim. Escape cancels a gesture. The common Inspector validates caption drafts; Apply creates one correction. Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) restores document versions outside text entry. Ctrl+Shift+P opens the command palette.
-
-Video preview uses CyUI Images with fit/zoom/pan. Diagnostics adds severity/search/follow and copy-visible controls while retaining full selectable log text and full-file copy. Advanced operations uses the shared JSON editor/syntax viewer. Existing business parameters, word evidence, model installations and MCP contracts are preserved. English/French, five themes and both densities remain available. See [migration details and validation](app/Docs/CyUIMigration.md).
-
-CyUI: MIT. Full license: LICENCES/CyUI-MIT.txt.
-Upstream license: https://github.com/MrMybal/CyUI/blob/main/LICENSE
-Repository: https://github.com/MrMybal/CyUI (currently private; no upstream access required to run this application).
-
-
-## Local documentation
-
-Open **Options → Open local manual (F1)** or press **F1** in the application. The complete offline reader is shipped in `app/Documentation/Documentation.html`. [Regenerate the manual](app/.CyDocBuild/README.md).
+</details>
