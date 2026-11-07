@@ -1,0 +1,177 @@
+{
+  "accent": "#8eaaff",
+  "category": {
+    "en": "Subtitles / transcription & editing",
+    "fr": "Sous-titres / transcription et édition"
+  },
+  "intro": {
+    "en": "From spoken words to readable subtitles.",
+    "fr": "De la parole aux sous-titres lisibles."
+  },
+  "description": {
+    "en": "Transcribe local media, review word timing and edit captions with a synchronised player. Add optional speaker analysis and export the result.",
+    "fr": "Transcrivez vos médias locaux, vérifiez les mots et leur timing, puis corrigez les sous-titres avec le lecteur synchronisé. Ajoutez l’analyse des locuteurs et exportez le résultat."
+  },
+  "audience": {
+    "en": "For video creators, editors and anyone who needs to review and correct a local subtitle document.",
+    "fr": "Pour les vidéastes, les monteurs et toute personne qui doit relire et corriger des sous-titres locaux."
+  },
+  "tags": [
+    {
+      "en": "Phonon",
+      "fr": "Phonon"
+    },
+    {
+      "en": "SRT / VTT",
+      "fr": "SRT / VTT"
+    },
+    {
+      "en": "Timeline",
+      "fr": "Timeline"
+    },
+    {
+      "en": "Speakers",
+      "fr": "Locuteurs"
+    }
+  ],
+  "hero": "workspace",
+  "heroCaption": {
+    "en": "Subtitle workspace · hand-authored demo captions, not a transcription-quality claim.",
+    "fr": "Espace sous-titres · texte de démonstration rédigé manuellement, sans affirmation sur la qualité de transcription."
+  },
+  "sections": [
+    {
+      "id": "transcription",
+      "label": {
+        "en": "01 / Local transcription",
+        "fr": "01 / Transcription locale"
+      },
+      "title": {
+        "en": "Start with the source media.",
+        "fr": "Commencez par le média source."
+      },
+      "body": {
+        "en": "Phonon transcription produces text and word timestamps from compatible local audio or video. Install the transcription runtime and model separately, then inspect the output in the application.",
+        "fr": "La transcription Phonon produit texte et horodatages depuis les médias locaux compatibles. Installez séparément le moteur et le modèle, puis contrôlez le résultat dans l’application."
+      },
+      "points": [
+        {
+          "en": "Local audio/video inspection and preview",
+          "fr": "Inspection et aperçu audio/vidéo locaux"
+        },
+        {
+          "en": "Word evidence preserved in the JSON document",
+          "fr": "Informations des mots conservées dans le document JSON"
+        },
+        {
+          "en": "SRT, WebVTT and JSON exports",
+          "fr": "Exports SRT, WebVTT et JSON"
+        }
+      ],
+      "image": "workspace",
+      "caption": {
+        "en": "Workspace with a safe, manually prepared caption document.",
+        "fr": "Espace de travail avec un document de démonstration rédigé manuellement."
+      },
+      "doc": "guide-lisez-moi"
+    },
+    {
+      "id": "editor",
+      "label": {
+        "en": "02 / Review & correction",
+        "fr": "02 / Relecture et correction"
+      },
+      "title": {
+        "en": "Read, adjust and check the timing.",
+        "fr": "Relisez, ajustez et vérifiez le timing."
+      },
+      "body": {
+        "en": "Use the caption list, timeline and inspector to correct text and timing. Reflow lines and inspect timing warnings without replacing the original word evidence.",
+        "fr": "Utilisez la liste, la timeline et l’inspecteur pour corriger texte et timing. Réorganisez les lignes et consultez les avertissements sans remplacer les informations originales des mots."
+      },
+      "points": [
+        {
+          "en": "Seek, zoom, move and trim in the timeline",
+          "fr": "Positionnement, zoom, déplacement et ajustement sur la timeline"
+        },
+        {
+          "en": "Inspector edits with undo/redo",
+          "fr": "Édition dans l’inspecteur avec annulation et rétablissement"
+        },
+        {
+          "en": "Timing repair and reading-speed review",
+          "fr": "Réparation des timings et contrôle de la vitesse de lecture"
+        }
+      ],
+      "image": "editor",
+      "caption": {
+        "en": "Caption editor · sample dialogue and per-caption inspector.",
+        "fr": "Éditeur de sous-titres · dialogue d’exemple et inspecteur par réplique."
+      },
+      "doc": "guide-lisez-moi"
+    },
+    {
+      "id": "speakers",
+      "label": {
+        "en": "03 / Optional speaker analysis",
+        "fr": "03 / Analyse facultative des locuteurs"
+      },
+      "title": {
+        "en": "Separate voices. Review the assignments.",
+        "fr": "Distinguez les voix. Relisez les attributions."
+      },
+      "body": {
+        "en": "Compatible Community-1 or NVIDIA Nemotron 3 components assign anonymous speaker IDs. You can rename speakers and override individual captions. These are labels for the recording, not automatic real-world identities.",
+        "fr": "Les composants Community-1 ou NVIDIA Nemotron 3 compatibles attribuent des identifiants anonymes. Renommez les locuteurs ou corrigez une réplique. Ces étiquettes appartiennent à l’enregistrement, sans reconnaissance automatique de l’identité réelle."
+      },
+      "points": [
+        {
+          "en": "Separate engine and model installation",
+          "fr": "Installation distincte du moteur et du modèle"
+        },
+        {
+          "en": "Manual speaker labels remain reviewable",
+          "fr": "Attributions manuelles contrôlables"
+        },
+        {
+          "en": "CPU or compatible CUDA depends on the chosen backend",
+          "fr": "CPU ou CUDA compatible selon le moteur choisi"
+        }
+      ],
+      "image": "editor",
+      "caption": {
+        "en": "Demonstration speaker names are fictional labels entered for the example.",
+        "fr": "Les noms de locuteurs de démonstration sont fictifs et saisis pour l’exemple."
+      },
+      "doc": "guide-lisez-moi"
+    }
+  ],
+  "limits": {
+    "en": "Private GitHub repository: downloads require an authorised account. Windows x64 is tested; Linux and macOS remain unvalidated. Transcription runs on CPU. Optional NVIDIA speaker analysis can use CPU or CUDA. Translation and neural source separation are not implemented. Model access may require accepting provider terms.",
+    "fr": "Dépôt GitHub privé : les téléchargements nécessitent un compte autorisé. Windows x64 est testé ; Linux et macOS restent à valider. La transcription utilise le CPU. L’analyse NVIDIA facultative utilise CPU ou CUDA. La traduction et la séparation neuronale de sources ne sont pas implémentées. L’accès aux modèles peut nécessiter l’acceptation des conditions du fournisseur."
+  },
+  "shortName": "Subtitle",
+  "repository": "CyTools_Subtitle",
+  "private": true,
+  "licence": "AGPL-3.0-only",
+  "images": {
+    "workspace": {
+      "file": "assets/showcase/workspace.webp",
+      "width": 1500,
+      "height": 960,
+      "caption": {
+        "en": "Subtitle workspace · hand-authored demo captions, not a transcription-quality claim.",
+        "fr": "Espace sous-titres · texte de démonstration rédigé manuellement, sans affirmation sur la qualité de transcription."
+      }
+    },
+    "editor": {
+      "file": "assets/showcase/editor.webp",
+      "width": 1500,
+      "height": 960,
+      "caption": {
+        "en": "Caption editor · sample dialogue and per-caption inspector.",
+        "fr": "Éditeur de sous-titres · dialogue d’exemple et inspecteur par réplique."
+      }
+    }
+  }
+}

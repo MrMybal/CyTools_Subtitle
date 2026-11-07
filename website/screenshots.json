@@ -1,0 +1,14 @@
+[
+  {
+    "file": "assets/showcase/workspace.webp",
+    "origin": "Built-in application UI capture with a manually authored fictional fixture",
+    "originalSha256": "dcd20befa8a256d2da7f42de306df3c333717bba4ec02a8be69c90c28c7395cc",
+    "transform": "Full frame, converted to WebP; metadata omitted. No compositing or generative editing."
+  },
+  {
+    "file": "assets/showcase/editor.webp",
+    "origin": "Built-in application UI capture with a manually authored fictional fixture",
+    "originalSha256": "6b664f811a76ae6fb68938a4474b4f873492a52cbf9a5367e9a39886abb30f1b",
+    "transform": "Full frame, converted to WebP; metadata omitted. No compositing or generative editing."
+  }
+]
