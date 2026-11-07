@@ -1,5 +1,7 @@
 # CyTools_Subtitle
 
+[Documentation (local)](app/Documentation/Documentation.html#/en/overview) · [Website (local build)](website/README.md#build-and-preview)
+
 Local subtitle generation from audio and video, with a Dear ImGui media player, cue editor, and MCP/CLI API.
 
 [Français](LISEZ-MOI.md) · [Detailed guide](app/README.md) · [Capabilities](app/Docs/CapabilityCoverage.md)

@@ -1,5 +1,7 @@
 # CyTools_Subtitle
 
+[Documentation (locale)](app/Documentation/Documentation.html#/fr/overview) · [Site web (version locale)](website/README.md#build-and-preview)
+
 Archive Windows portable : extrayez tout le ZIP dans un dossier accessible en écriture, puis lancez **CyTools_Subtitle.exe**. Python et les bibliothèques du lecteur et de l’interface sont inclus. Dans Installation, consultez la licence de PyTorch et cliquez **Download / repair PyTorch**, puis téléchargez les modèles dans l’onglet Installation après consultation de leur licence. Pour une installation depuis les sources, exécutez d’abord app/install.ps1.
 
 1. Ouvrez votre audio ou vidéo dans **Media & generation**.
