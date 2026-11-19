@@ -34,7 +34,7 @@ from pathlib import Path
 site=Path(sysconfig.get_paths()['purelib']).resolve()
 rows=[]
 for d in m.distributions():
- rows.append({'name':d.metadata['Name'],'version':d.version,'requires':d.requires or [],'license':d.metadata.get('License-Expression') or d.metadata.get('License') or 'See included notices','files':[str(d.locate_file(f).resolve()) for f in d.files or []]})
+ rows.append({'name':d.metadata['Name'],'version':d.version,'requires':d.requires or [],'license':d.metadata.get('License-Expression') or d.metadata.get('License') or 'See included notices','root':str(Path(d.locate_file('')).resolve()),'files':[str(d.locate_file(f).resolve()) for f in d.files or []]})
 print(json.dumps({'python':'.'.join(map(str,sys.version_info[:2])),'site':str(site),'distributions':rows}))'''
  raw=json.loads(subprocess.check_output([str(python),'-c',code],cwd=ROOT,text=True,encoding='utf-8'))
  installed={canonicalize_name(d['name']):d for d in raw['distributions']}
@@ -97,10 +97,11 @@ def main():
  oldsite=Path(raw['site']);notices=[]
  for key,d in sorted(selected.items()):
   notices.append({'name':d['name'],'version':d['version'],'license':d['license']})
+  distribution_root=Path(d['root'])
   for name in d['files']:
    f=Path(name)
-   if not f.is_file() or not f.is_relative_to(oldsite):continue
-   relative=f.relative_to(oldsite)
+   if not f.is_file() or not f.is_relative_to(distribution_root):continue
+   relative=f.relative_to(distribution_root)
    if any(part in SKIP for part in relative.parts) or f.suffix in {'.pyc','.pyo'} or f.name=='direct_url.json' or relative.parts[0]=='bin':continue
    target=site/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(f,target)
  # Metadata paths and generated console entry points are not portable payload.
