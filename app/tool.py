@@ -459,6 +459,8 @@ def create_runtime(data_dir, **options):
 
     for name,handler in (("transcribe",transcribe),("inspect_media",inspect_media),("read_subtitles",read_subtitles),("edit_subtitles",edit_subtitles),("reflow_subtitles",reflow_subtitles),("repair_subtitles",repair_subtitles),("model_status",status),("install_model",install),("register_local_model",register_local),("runtime_status",runtime_status),("install_runtime",install_runtime),("diarization_status",diarization_status),("check_diarization_access",check_diarization_access),("install_diarization_runtime",install_diarization_runtime),("install_diarization_model",install_diarization_model),("register_diarization_model",register_diarization_model),("diarize_subtitles",diarize_subtitles),("rename_speakers",rename_speakers),("nemotron_status",nemotron_status),("nemotron_diagnostics",nemotron_diagnostics),("install_nemotron_runtime",install_nemotron_runtime),("install_nemotron_model",install_nemotron_model),("register_nemotron_model",register_nemotron_model)):
         runtime.register(name,handler,**({"estimate":estimate_diarization} if name=="diarize_subtitles" else {"estimate":estimate} if name=="transcribe" else {"estimate":estimate_input} if name in ("inspect_media","read_subtitles","edit_subtitles","reflow_subtitles","repair_subtitles","rename_speakers") else {}))
+    from cytools_core.communication import register_operations as register_communication
+    register_communication(runtime)
     return runtime
 
 
