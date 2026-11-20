@@ -3,7 +3,7 @@
   "protocolVersion": "1.0",
   "id": "cy.tools.subtitle",
   "name": "CyTools_Subtitle",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Local Phonon subtitles with word timing, bounded audio processing, media preview and MCP editing.",
   "vendor": "Cyberalien",
   "author": "Cyberalien",

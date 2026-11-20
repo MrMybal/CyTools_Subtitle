@@ -1,6 +1,6 @@
 # CyTools_Subtitle 0.7.0
 
-Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.11.0 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
+Local Phonon subtitles, word timing, native audio/video preview, cue editor and MCP API. Built with the actual CyToolsCore 0.12.0 MIT wheel, without copying its runtime sources. No media, UI or ML imports enter the Core.
 
 ## Desktop
 
@@ -114,7 +114,7 @@ CyUI 1.2.0 uses the [MIT license](https://github.com/MrMybal/CyUI/blob/ff023e646
 Windows x64 source installation uses the pinned native platform wheel:
 
 ```powershell
-python -m pip install "cytools-core @ https://github.com/MrMybal/CyToolsCore/releases/download/v0.11.0/cytools_core-0.11.0-py3-none-win_amd64.whl"
+python -m pip install "cytools-core==0.12.0" --find-links app/packages
 ```
 
 The same wheel and SHA-256 are included in `app/packages/native-core.json`.
